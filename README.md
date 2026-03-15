@@ -14,9 +14,17 @@ L’application fonctionne entièrement **en local** (localStorage) et ne néces
 Il suffit d’ouvrir `index.html` dans un navigateur moderne.
 
 [**▶️ Tester Reco maintenant**](https://jeromemtl.github.io/reco/)
+
 ---
 
 ## Fonctionnalités
+
+### Scan par caméra (nouveau !) 📷
+- Utilisation de la caméra du téléphone ou de l'ordinateur via la bibliothèque [html5-qrcode](https://github.com/mebjas/html5-qrcode)
+- Détection automatique des codes-barres (EAN-13, CODE-128, QR Code, etc.)
+- Bip sonore activable/désactivable
+- Flash utilisable si supporté par l'appareil
+- Le dernier code scanné s'affiche à l'écran
 
 ### Gestion des onglets
 - création, renommage et suppression d’onglets  
@@ -25,9 +33,9 @@ Il suffit d’ouvrir `index.html` dans un navigateur moderne.
 - remplacement complet de la liste d’onglets via une fenêtre dédiée  
 
 ### Zone de saisie optimisée
-- saisie manuelle ou via douchette  
+- saisie manuelle, via douchette **ou par caméra**
 - **aucune configuration nécessaire** : la touche **Tab** envoyée par la douchette est automatiquement convertie en **retour à la ligne**  
-- sauvegarde automatique après chaque modification (Enter, Tab, Backspace…)  
+- sauvegarde automatique après chaque modification (Enter, Tab, Backspace, scan…)  
 - compteur de lignes dynamique  
 - choix de la taille du texte  
 
@@ -48,3 +56,20 @@ Il suffit d’ouvrir `index.html` dans un navigateur moderne.
 - mode clair / sombre  
 - interface responsive  
 - feedback visuel lors de la sauvegarde  
+
+---
+
+## 📜 Licences
+
+Ce projet est sous double licence :
+
+| Code | Licence |
+|------|---------|
+| **Code original de l'application** (fichiers `.js`, `.css`, `.html`) | [MIT](LICENSE) |
+| **Bibliothèque [html5-qrcode](https://github.com/mebjas/html5-qrcode)** utilisée pour le scan par caméra | [Apache 2.0](LICENSE-APACHE.txt) |
+
+Les deux licences sont compatibles entre elles. Vous pouvez donc utiliser, modifier et distribuer cette application librement, y compris dans un contexte commercial, à condition de respecter les termes des licences (conservation des copyrights, inclusion des textes de licence).
+
+---
+
+*Projet développé pour simplifier le quotidien des documentalistes et professeurs documentalistes.*
