@@ -13,7 +13,7 @@ Elle permet de saisir, organiser et exporter facilement les cotes scannées ou t
 L’application fonctionne entièrement **en local** (localStorage) et ne nécessite aucune installation.  
 Il suffit d’ouvrir `index.html` dans un navigateur moderne.
 
-[**▶️ Tester Récolement+ maintenant**](https://jeromemtl.github.io/recolementplus/)
+[**▶️ Tester Reco maintenant**](https://jeromemtl.github.io/reco/)
 ---
 
 ## Fonctionnalités
