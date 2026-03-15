@@ -2,16 +2,20 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Récolement+</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Reco</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Librairie scanner caméra -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 <body>
 
 <div class="header">
-    <h2>Récolement+</h2>
+    <h2>Reco</h2>
 
-    <div class="toolbar">
-        <button id="saveBtnTop" class="icon-btn" data-tooltip="Exporter l’onglet actuel">📤</button>
+    <div class="toolbar" style="flex-wrap: wrap; justify-content: flex-end; gap: 5px;">
+        <button id="cameraScanBtn" class="icon-btn" data-tooltip="Scanner avec la caméra">📷</button>
+        <button id="saveBtnTop" class="icon-btn" data-tooltip="Exporter l'onglet actuel">📤</button>
         <button id="saveAllBtnTop" class="icon-btn" data-tooltip="Exporter tous les onglets">📦</button>
         <button id="replaceTabsBtn" class="icon-btn" data-tooltip="Remplacer tous les onglets">🔄</button>
         <button id="resetBtnTop" class="icon-btn" data-tooltip="Réinitialiser tous les onglets">🗑️</button>
@@ -23,14 +27,13 @@
 <div class="tabs" id="tabs"></div>
 
 <textarea id="note" placeholder="─── Scannez vos documents ici ───
-L’application enregistre automatiquement.
+L'application enregistre automatiquement.
 
 Vous pouvez :
-– créer, renommer/supprimer (clique droit) ou déplacer les onglets
+– créer, renommer/supprimer (clic droit) ou déplacer les onglets
 – voir les onglets remplis (point vert)
 – exporter vos données
-– afficher les statistiques du récolement
-– changer le thème clair/sombre
+– scanner avec la caméra (bouton 📷)
 – scanner normalement : la touche Tab est automatiquement convertie en retour à la ligne (aucune configuration de la douchette nécessaire).
 "></textarea>
 
@@ -54,7 +57,7 @@ Vous pouvez :
 <div id="replaceModal" class="modal">
     <div class="modal-content">
         <h3>Remplacer tous les onglets</h3>
-        <p>Entrez un nom d’onglet par ligne :</p>
+        <p>Entrez un nom d'onglet par ligne :</p>
         <textarea id="replaceInput"></textarea>
 
         <div class="modal-buttons">
@@ -77,11 +80,13 @@ Vous pouvez :
     </div>
 </div>
 
+<!-- Scripts -->
 <script src="js/storage.js"></script>
 <script src="js/tabs.js"></script>
 <script src="js/editor.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/theme.js"></script>
+<script src="js/scanner-camera.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

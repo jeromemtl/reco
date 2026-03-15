@@ -302,3 +302,69 @@ body.dark #statsSave:hover { background: #256628; }
     max-height: 300px;
     overflow-y: auto;
 }
+
+/* --------------------------------------------------
+   SCANNER
+-------------------------------------------------- */
+
+#scanToggleBtn.active {
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+}
+
+#scanIndicator {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
+
+/* Mode sombre pour le scanner */
+body.dark #scanIndicator {
+    background: #2e7d32;
+}
+
+/* Animation de flash lors du scan */
+.scan-flash {
+    animation: scanFlash 0.2s ease;
+}
+
+@keyframes scanFlash {
+    0% { background-color: #e8f5e8; }
+    100% { background-color: transparent; }
+}
+
+/* --------------------------------------------------
+   MOBILE RESPONSIVE
+-------------------------------------------------- */
+@media (max-width: 600px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .toolbar {
+        width: 100%;
+        justify-content: center !important;
+    }
+    
+    .icon-btn {
+        font-size: 1.5rem;  /* Réduit de 2rem à 1.5rem sur mobile */
+        padding: 5px;
+    }
+    
+    h2 {
+        margin: 5px 0;
+        font-size: 1.5rem;
+    }
+    
+    #fontSizeSelect {
+        font-size: 14px;
+        padding: 5px;
+    }
+}
