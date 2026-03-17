@@ -1,40 +1,70 @@
 /* --------------------------------------------------
+   VARIABLES ET RÉINITIALISATIONS
+-------------------------------------------------- */
+:root {
+    --primary: #4285f4;
+    --primary-dark: #2f6fe0;
+    --success: #4CAF50;
+    --success-dark: #3e8e41;
+    --success-light: #2ecc71;
+    --danger: #f44336;
+    --text-light: #333;
+    --text-dark: #e0e0e0;
+    --bg-light: #fff;
+    --bg-dark: #1e1e1e;
+    --border-light: #888;
+    --border-dark: #555;
+    --tab-bg-light: #eee;
+    --tab-bg-dark: #444;
+    --transition: 0.3s;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+/* --------------------------------------------------
    BASE
 -------------------------------------------------- */
 body {
     font-family: sans-serif;
     margin: 20px;
     position: relative;
-    transition: background 0.3s, color 0.3s;
+    transition: background var(--transition), color var(--transition);
+    background: var(--bg-light);
+    color: var(--text-light);
 }
 
 textarea {
     width: 100%;
     height: 70vh;
     font-size: 1.2rem;
+    font-family: 'Courier New', Courier, monospace;
     padding: 10px;
     margin-top: 10px;
-    box-sizing: border-box;
-    transition: background 0.3s, color 0.3s;
+    border: 1px solid var(--border-light);
+    border-radius: 4px;
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
 }
 
 /* --------------------------------------------------
    MODE SOMBRE
 -------------------------------------------------- */
 body.dark {
-    background: #1e1e1e;
-    color: #e0e0e0;
+    background: var(--bg-dark);
+    color: var(--text-dark);
 }
 
 body.dark textarea {
     background: #2a2a2a;
-    color: #e0e0e0;
-    border: 1px solid #555;
+    color: var(--text-dark);
+    border-color: var(--border-dark);
 }
 
+/* Éléments partagés mode sombre */
 body.dark .tab,
 body.dark #addTabBtn {
-    background: #444;
+    background: var(--tab-bg-dark);
     border-color: #777;
 }
 
@@ -46,46 +76,44 @@ body.dark .tab.active {
 body.dark #contextMenu,
 body.dark .modal-content {
     background: #333;
-    color: #eee;
+    color: var(--text-dark);
     border-color: #666;
 }
 
-body.dark .icon-btn:hover::after {
+body.dark .icon-btn:hover::after,
+body.dark #statsOutput {
     background: #222;
 }
 
-body.dark #statsOutput {
-    background: #333;
-}
-
 /* --------------------------------------------------
-   ONGLET + INDICATEUR
+   ONGLETS
 -------------------------------------------------- */
 .tab {
     padding: 5px 12px;
-    border: 1px solid #888;
+    border: 1px solid var(--border-light);
     border-radius: 5px;
     cursor: grab;
-    background: #eee;
+    background: var(--tab-bg-light);
     user-select: none;
+    transition: background var(--transition), color var(--transition);
 }
 
 .tab.active {
-    background: #4285f4;
+    background: var(--primary);
     color: white;
     font-weight: bold;
 }
 
 .tab.hasContent::before {
     content: "●";
-    color: #2ecc71;
+    color: var(--success-light);
     font-size: 1rem;
     margin-right: 6px;
 }
 
 #addTabBtn {
     padding: 5px 12px;
-    border: 1px dashed #888;
+    border: 1px dashed var(--border-light);
     border-radius: 5px;
     cursor: pointer;
     background: #fafafa;
@@ -93,18 +121,21 @@ body.dark #statsOutput {
 }
 
 /* --------------------------------------------------
-   LAYOUT
+   LAYOUT PRINCIPAL
 -------------------------------------------------- */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .toolbar {
     display: flex;
     gap: 10px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .tabs {
@@ -114,28 +145,33 @@ body.dark #statsOutput {
     flex-wrap: wrap;
 }
 
-#lineCount {
+/* --------------------------------------------------
+   ÉLÉMENTS FLOTTANTS (footer)
+-------------------------------------------------- */
+#lineCount,
+#saveFeedback,
+#fontSizeSelect {
     position: fixed;
     bottom: 10px;
+    z-index: 100;
+}
+
+#lineCount {
     right: 20px;
     opacity: 0.7;
 }
 
 #saveFeedback {
-    position: fixed;
-    bottom: 10px;
     right: 120px;
     opacity: 0;
     transition: opacity 0.4s;
     font-size: 0.9rem;
-    color: #4CAF50;
+    color: var(--success);
 }
 
 #fontSizeSelect {
-    position: fixed;
-    bottom: 10px;
     left: 20px;
-    border: 1px solid #888;
+    border: 1px solid var(--border-light);
     border-radius: 5px;
     padding: 3px 6px;
     cursor: pointer;
@@ -143,7 +179,7 @@ body.dark #statsOutput {
 }
 
 /* --------------------------------------------------
-   ICON BUTTONS + TOOLTIP
+   BOUTONS ICÔNES + TOOLTIPS
 -------------------------------------------------- */
 .icon-btn {
     position: relative;
@@ -152,6 +188,11 @@ body.dark #statsOutput {
     background: none;
     border: none;
     padding: 3px 6px;
+    transition: transform 0.2s;
+}
+
+.icon-btn:hover {
+    transform: scale(1.1);
 }
 
 .icon-btn:hover::after {
@@ -170,6 +211,7 @@ body.dark #statsOutput {
     max-width: 220px;
     white-space: normal;
     text-align: center;
+    z-index: 1000;
 }
 
 .icon-btn:hover::before {
@@ -185,7 +227,7 @@ body.dark #statsOutput {
 }
 
 /* --------------------------------------------------
-   CONTEXT MENU
+   MENU CONTEXTUEL
 -------------------------------------------------- */
 #contextMenu {
     position: absolute;
@@ -200,6 +242,7 @@ body.dark #statsOutput {
 #contextMenu div {
     padding: 8px 15px;
     cursor: pointer;
+    transition: background 0.2s;
 }
 
 #contextMenu div:hover {
@@ -233,9 +276,6 @@ body.dark #statsOutput {
     margin-top: 10px;
 }
 
-/* --------------------------------------------------
-   BOUTONS MODALES (génériques)
--------------------------------------------------- */
 .modal-buttons {
     display: flex;
     justify-content: flex-end;
@@ -250,9 +290,10 @@ body.dark #statsOutput {
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
-/* Bouton Annuler */
+/* Boutons modales */
 #replaceCancel {
     background: #ccc;
     color: #333;
@@ -261,35 +302,46 @@ body.dark #statsOutput {
     background: #b5b5b5;
 }
 
-/* Bouton Valider */
-#replaceConfirm {
-    background: #4285f4;
+#replaceConfirm,
+#statsSave {
     color: white;
     font-weight: bold;
-}
-#replaceConfirm:hover {
-    background: #2f6fe0;
 }
 
-/* Bouton Enregistrer Stats */
+#replaceConfirm {
+    background: var(--primary);
+}
+#replaceConfirm:hover {
+    background: var(--primary-dark);
+}
+
 #statsSave {
-    background: #4CAF50;
-    color: white;
-    font-weight: bold;
+    background: var(--success);
 }
 #statsSave:hover {
-    background: #3e8e41;
+    background: var(--success-dark);
 }
 
 /* Mode sombre pour les boutons */
-body.dark #replaceCancel { background: #555; color: #eee; }
-body.dark #replaceCancel:hover { background: #666; }
-
-body.dark #replaceConfirm { background: #1e5ad7; }
-body.dark #replaceConfirm:hover { background: #174bb5; }
-
-body.dark #statsSave { background: #2e7d32; }
-body.dark #statsSave:hover { background: #256628; }
+body.dark #replaceCancel {
+    background: #555;
+    color: var(--text-dark);
+}
+body.dark #replaceCancel:hover {
+    background: #666;
+}
+body.dark #replaceConfirm {
+    background: #1e5ad7;
+}
+body.dark #replaceConfirm:hover {
+    background: #174bb5;
+}
+body.dark #statsSave {
+    background: #2e7d32;
+}
+body.dark #statsSave:hover {
+    background: #256628;
+}
 
 /* --------------------------------------------------
    STATISTIQUES
@@ -301,14 +353,15 @@ body.dark #statsSave:hover { background: #256628; }
     border-radius: 6px;
     max-height: 300px;
     overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
 }
 
 /* --------------------------------------------------
    SCANNER
 -------------------------------------------------- */
-
 #scanToggleBtn.active {
-    background-color: #4CAF50;
+    background-color: var(--success);
     color: white;
     border-radius: 5px;
 }
@@ -323,12 +376,6 @@ body.dark #statsSave:hover { background: #256628; }
     100% { opacity: 1; }
 }
 
-/* Mode sombre pour le scanner */
-body.dark #scanIndicator {
-    background: #2e7d32;
-}
-
-/* Animation de flash lors du scan */
 .scan-flash {
     animation: scanFlash 0.2s ease;
 }
@@ -345,16 +392,15 @@ body.dark #scanIndicator {
     .header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 10px;
     }
     
     .toolbar {
         width: 100%;
-        justify-content: center !important;
+        justify-content: center;
     }
     
     .icon-btn {
-        font-size: 1.5rem;  /* Réduit de 2rem à 1.5rem sur mobile */
+        font-size: 1.5rem;
         padding: 5px;
     }
     
@@ -366,5 +412,18 @@ body.dark #scanIndicator {
     #fontSizeSelect {
         font-size: 14px;
         padding: 5px;
+    }
+    
+    #lineCount,
+    #saveFeedback,
+    #fontSizeSelect {
+        position: static;
+        margin: 5px;
+        display: inline-block;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
     }
 }
