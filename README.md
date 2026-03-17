@@ -1,4 +1,4 @@
-# Récolement+ — Alternative au bloc-notes
+# Reco — Alternative au bloc-notes pour le récolement
 ![vibe-coded](https://img.shields.io/badge/vibe-coded-black?style=for-the-badge)
 ![Hors ligne](https://img.shields.io/badge/hors_ligne-fonctionne-2c3e50?style=for-the-badge)
 ![Local Only](https://img.shields.io/badge/données-locales_uniquement-2ecc71?style=for-the-badge)
