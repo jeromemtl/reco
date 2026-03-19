@@ -64,12 +64,31 @@ const CameraScanner = (() => {
         } catch (e) {}
     }
     
+    // Obtenir le nombre de lignes de l'onglet courant
+    function getCurrentTabLineCount() {
+        if (!AppState.currentTab) return 0;
+        
+        const content = AppState.files[AppState.currentTab] || "";
+        const lines = content.split("\n").filter(l => l.trim() !== "").length;
+        return lines;
+    }
+    
+    // Mettre à jour l'affichage du compteur
+    function updateLineCountDisplay() {
+        const lineCountBadge = document.querySelector('.badge-lines');
+        if (lineCountBadge && AppState.currentTab) {
+            const lineCount = getCurrentTabLineCount();
+            lineCountBadge.innerHTML = `📊 ${lineCount} ligne${lineCount > 1 ? 's' : ''}`;
+        }
+    }
+    
     // Créer l'interface du scanner
     async function createScannerUI() {
         const oldContainer = document.getElementById("camera-scanner-container");
         if (oldContainer) oldContainer.remove();
         
         const currentTabName = AppState.currentTab || "Aucun";
+        const lineCount = getCurrentTabLineCount();
         
         hasFlash = await checkFlashSupport();
         
@@ -78,90 +97,44 @@ const CameraScanner = (() => {
         
         const flashButtonHTML = hasFlash ? `
             <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
-                <button id="toggle-flash" style="
-                    padding: 10px 20px;
-                    background: #4285f4;
-                    color: white;
-                    border: none;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 16px;
-                ">🔦 Flash</button>
+                <button id="toggle-flash" class="flash-button">🔦 Flash</button>
             </div>
         ` : '';
         
         container.innerHTML = `
-            <div id="scanner-overlay" style="
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0,0,0,0.95);
-                z-index: 10000;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-            ">
-                <div style="
-                    background: white;
-                    padding: 15px;
-                    border-radius: 15px;
-                    width: 95%;
-                    max-width: 500px;
-                    text-align: center;
-                    position: relative;
-                ">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin:0;">📷 Scanner</h3>
-                        <div style="
-                            background: #e3f2fd;
-                            color: #1976d2;
-                            padding: 5px 10px;
-                            border-radius: 20px;
-                            font-size: 14px;
-                            font-weight: bold;
-                        ">
-                            📌 ${currentTabName}
+            <div id="scanner-overlay">
+                <div class="scanner-modal">
+                    <div class="scanner-header">
+                        <h3>📷 Scanner</h3>
+                        <div class="scanner-badges">
+                            <div class="badge-lines">
+                                📊 ${lineCount} ligne${lineCount > 1 ? 's' : ''}
+                            </div>
+                            <div class="badge-tab">
+                                📌 ${currentTabName}
+                            </div>
                         </div>
-                        <button id="close-scanner" style="
-                            background: none;
-                            border: none;
-                            font-size: 24px;
-                            cursor: pointer;
-                            padding: 0 10px;
-                        ">✖</button>
+                        <button id="close-scanner" class="close-scanner">✖</button>
                     </div>
                     
                     <div id="qr-reader" style="width: 100%; margin: 0 auto;"></div>
                     
                     ${flashButtonHTML}
                     
-                    <p id="scanner-status" style="margin: 15px 0 5px 0; color: #666; font-size: 14px;">
+                    <p id="scanner-status" class="scanner-status">
                         Pointez la caméra vers un code-barres
                     </p>
                     
-                    <div style="display: flex; gap: 20px; justify-content: center; margin: 10px 0;">
-                        <label style="display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                    <div class="scanner-option">
+                        <label>
                             <input type="checkbox" id="beep-option" checked> 
-                            <span style="font-size: 16px;">🔊 Bip sonore</span>
+                            <span>🔊 Bip sonore</span>
                         </label>
                     </div>
                     
-                    <div id="last-code-container" style="
-                        margin-top: 15px;
-                        padding: 10px;
-                        background: #f5f5f5;
-                        border-radius: 8px;
-                        border: 1px solid #ddd;
-                        font-family: monospace;
-                        font-size: 14px;
-                        text-align: left;
-                        word-break: break-all;
-                    ">
-                        <div style="font-weight: bold; margin-bottom: 5px; color: #333;">📋 Dernier code ajouté :</div>
-                        <div id="last-code-display" style="color: #2ecc71;">—</div>
+                    <div class="last-code-container">
+                        <div class="last-code-title">📋 Dernier code ajouté :</div>
+                        <div id="last-code-display" class="last-code-display">—</div>
                     </div>
                 </div>
             </div>
@@ -362,6 +335,9 @@ const CameraScanner = (() => {
         if (typeof Editor !== 'undefined') {
             Editor.updateLineCount();
         }
+        
+        // Mettre à jour l'affichage du compteur dans le scanner
+        updateLineCountDisplay();
         
         note.dispatchEvent(new Event('input', { bubbles: true }));
         
