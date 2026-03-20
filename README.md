@@ -1,61 +1,92 @@
-# Reco — Alternative au bloc-notes pour le récolement
+# 📦 Réco — Récolement collaboratif au CDI
+
 ![vibe-coded](https://img.shields.io/badge/vibe-coded-black?style=for-the-badge)
 ![Hors ligne](https://img.shields.io/badge/hors_ligne-fonctionne-2c3e50?style=for-the-badge)
 ![Local Only](https://img.shields.io/badge/données-locales_uniquement-2ecc71?style=for-the-badge)
+![Collaboratif](https://img.shields.io/badge/collaboratif-à_plusieurs-9b59b6?style=for-the-badge)
 ![Mode sombre](https://img.shields.io/badge/mode_sombre-supporté-000000?style=for-the-badge)
-![Autosave](https://img.shields.io/badge/sauvegarde-automatique-3498db?style=for-the-badge)
 
-## Présentation
+## 🎯 Pourquoi Réco ?
 
-**Récolement+** est une application web légère et ergonomique destinée au **récolement du CDI**.  
-Elle permet de saisir, organiser et exporter facilement les cotes scannées ou tapées, sans configuration particulière de la douchette.
+**Réco** est une application web pensée pour **simplifier et accélérer le récolement au CDI**, sans se prendre la tête avec du matériel spécifique.
 
-L’application fonctionne entièrement **en local** (localStorage) et ne nécessite aucune installation.  
-Il suffit d’ouvrir `index.html` dans un navigateur moderne.
+👉 **Ce n'est pas un remplaçant de BCDI**, mais un outil complémentaire pour la phase de terrain :  
+capture rapide des codes-barres (scan ou saisie), organisation par onglets, export facile pour réintégration dans votre logiciel documentaire.
 
-[**▶️ Tester Reco maintenant**](https://jeromemtl.github.io/reco/)
+[**▶️ Tester Réco maintenant**](https://jeromemtl.github.io/reco/)
 
 ---
 
-## Fonctionnalités
+## 👥 Un outil collaboratif
 
-### Scan par caméra (nouveau !) 📷
-- Utilisation de la caméra du téléphone ou de l'ordinateur via la bibliothèque [html5-qrcode](https://github.com/mebjas/html5-qrcode)
+L'atout de Réco ? **On peut être plusieurs à récoler en même temps** !  
+- Plusieurs collègues peuvent participer sur des postes différents
+- Et pourquoi pas **embarquer les élèves** dans l'opération ?  
+  Sous votre supervision, ils peuvent scanner les documents, ce qui les responsabilise et les implique dans la vie du CDI.
+
+Pas de connexion nécessaire, pas de compte à créer : chacun ouvre l'application sur son appareil et c'est parti !
+
+---
+
+## ✨ Fonctionnalités
+
+### Scan par caméra 📷
+- Utilisation de la caméra du téléphone ou de l'ordinateur
 - Détection automatique des codes-barres (EAN-13, CODE-128, QR Code, etc.)
 - Bip sonore activable/désactivable
 - Flash utilisable si supporté par l'appareil
-- Le dernier code scanné s'affiche à l'écran
 
 ### Gestion des onglets
-- création, renommage et suppression d’onglets  
-- réorganisation par glisser‑déposer  
-- indicateur visuel pour les onglets contenant du texte  
-- remplacement complet de la liste d’onglets via une fenêtre dédiée  
+- Création, renommage et suppression d'onglets
+- Réorganisation par glisser-déposer
+- Indicateur visuel pour les onglets contenant du texte
+- Remplacement complet de la liste via une fenêtre dédiée
 
 ### Zone de saisie optimisée
-- saisie manuelle, via douchette **ou par caméra**
-- **aucune configuration nécessaire** : la touche **Tab** envoyée par la douchette est automatiquement convertie en **retour à la ligne**  
-- sauvegarde automatique après chaque modification (Enter, Tab, Backspace, scan…)  
-- compteur de lignes dynamique  
-- choix de la taille du texte  
+- Saisie manuelle, via douchette **ou par caméra**
+- **Aucune configuration nécessaire** : la touche **Tab** est automatiquement convertie en retour à la ligne
+- Sauvegarde automatique après chaque modification
+- Compteur de lignes dynamique
+- Choix de la taille du texte
 
 ### Export & sauvegarde
-- export TXT de l’onglet courant  
-- export TXT de tous les onglets remplis  
-- sauvegarde automatique locale (localStorage)  
-- restauration automatique à l’ouverture  
+- Export TXT de l'onglet courant
+- Export TXT de tous les onglets remplis
+- Sauvegarde automatique locale (localStorage)
+- Restauration automatique à l'ouverture
 
 ### Statistiques intégrées
-- nombre total d’onglets  
-- nombre total de lignes  
-- onglets vides / remplis  
-- détail par onglet  
-- export TXT des statistiques  
+- Nombre total d'onglets et de lignes
+- Onglets vides / remplis
+- Détail par onglet
+- Export TXT des statistiques
 
 ### Interface moderne
-- mode clair / sombre  
-- interface responsive  
-- feedback visuel lors de la sauvegarde  
+- Mode clair / sombre
+- Interface responsive
+- Feedback visuel lors de la sauvegarde
+
+---
+
+## 🚀 Comment l'utiliser ?
+
+C'est tout simple :
+
+1. Ouvrez [**l'application en ligne**](https://jeromemtl.github.io/reco/)
+2. Créez vos onglets (un par cote, par emplacement...)
+3. Scannez ou saisissez les codes-barres
+4. Exportez le tout pour réintégrer dans BCDI
+
+**Aucune installation, aucune configuration** : ça marche partout, même sans Internet après le premier chargement.
+
+---
+
+## 👨‍🏫 Idées d'utilisation avec les élèves
+
+- **Par équipes** : chaque groupe d'élèves a son onglet et scanne une partie du CDI
+- **Suivi en temps réel** : vous voyez l'avancement de chaque groupe
+- **Responsabilisation** : les élèves participent à une tâche concrète et utile
+- **Apprentissage** : l'occasion de parler des codes-barres, des cotes, de l'organisation du CDI
 
 ---
 
@@ -72,4 +103,5 @@ Les deux licences sont compatibles entre elles. Vous pouvez donc utiliser, modif
 
 ---
 
-*Projet développé pour simplifier le quotidien des documentalistes et professeurs documentalistes.*
+*Projet développé pour simplifier le quotidien des documentalistes et professeurs documentalistes.*  
+💡 Des idées ? Des retours ? N'hésitez pas à ouvrir une issue ou à contribuer !
