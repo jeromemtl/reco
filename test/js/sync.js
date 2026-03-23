@@ -6,13 +6,12 @@ const Sync = (() => {
     let unsubscribeOrder = null;
     let isSyncing = false;
     let pendingSave = null;
+    let isFirstLoad = true;
     
-    // Éléments DOM pour l'indicateur
     const syncStatus = document.getElementById('syncStatus');
     const syncIcon = syncStatus?.querySelector('.sync-icon');
     const syncText = syncStatus?.querySelector('.sync-text');
     
-    // Mise à jour de l'indicateur
     function updateStatus(status, message) {
         if (!syncStatus) return;
         
@@ -28,11 +27,6 @@ const Sync = (() => {
             case 'success':
                 syncIcon.textContent = '☁️';
                 syncText.textContent = message || 'Synchronisé';
-                setTimeout(() => {
-                    if (syncText.textContent === 'Synchronisé') {
-                        // On laisse l'état
-                    }
-                }, 2000);
                 break;
             case 'error':
                 syncStatus.classList.add('error');
@@ -50,7 +44,62 @@ const Sync = (() => {
         }
     }
     
-    // Sauvegarder un onglet dans Firestore
+    // INITIALISER LES DONNÉES PAR DÉFAUT DANS FIRESTORE
+    async function initDefaultData(uai) {
+        console.log('📦 Initialisation des données par défaut pour', uai);
+        
+        const defaultTabs = [
+            "000","100","200","300","400","500","600","700","800","900",
+            "A","BD","C","M","N","P","R","T","FL"
+        ];
+        
+        const batch = window.db.batch();
+        const tabsRef = window.db.collection('etablissements').doc(uai).collection('tabs');
+        const orderRef = window.db.collection('etablissements').doc(uai).collection('metadata').doc('order');
+        const currentRef = window.db.collection('etablissements').doc(uai).collection('metadata').doc('current');
+        
+        for (const name of defaultTabs) {
+            const tabRef = tabsRef.doc(name);
+            batch.set(tabRef, { 
+                name: name, 
+                content: "", 
+                lastModified: firebase.firestore.FieldValue.serverTimestamp() 
+            });
+        }
+        
+        batch.set(orderRef, { 
+            order: defaultTabs, 
+            lastModified: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        batch.set(currentRef, { 
+            currentTab: "000", 
+            lastModified: firebase.firestore.FieldValue.serverTimestamp() 
+        });
+        
+        await batch.commit();
+        
+        console.log('✅ Données par défaut initialisées');
+        
+        // Mettre à jour l'état local
+        AppState.files = {};
+        defaultTabs.forEach(name => { AppState.files[name] = ""; });
+        AppState.tabOrder = [...defaultTabs];
+        AppState.currentTab = "000";
+        
+        // Sauvegarder en local
+        Storage.saveState();
+        
+        // Afficher les onglets
+        if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
+            window.Tabs.renderTabs();
+        }
+        if (window.Tabs && typeof window.Tabs.switchTab === 'function') {
+            window.Tabs.switchTab("000");
+        }
+        
+        return true;
+    }
+    
     async function saveTabToFirestore(tabName, content) {
         if (!currentUAI || !window.db) return false;
         
@@ -74,7 +123,6 @@ const Sync = (() => {
         }
     }
     
-    // Sauvegarder l'ordre des onglets
     async function saveOrderToFirestore(order) {
         if (!currentUAI || !window.db) return false;
         
@@ -96,7 +144,6 @@ const Sync = (() => {
         }
     }
     
-    // Sauvegarder l'onglet courant
     async function saveCurrentTabToFirestore(currentTab) {
         if (!currentUAI || !window.db) return false;
         
@@ -118,7 +165,6 @@ const Sync = (() => {
         }
     }
     
-    // Écouter les changements des onglets
     function listenTabs(uai, onData) {
         if (unsubscribeTabs) unsubscribeTabs();
         
@@ -126,18 +172,25 @@ const Sync = (() => {
             .doc(uai)
             .collection('tabs');
         
-        unsubscribeTabs = tabsRef.onSnapshot((snapshot) => {
+        unsubscribeTabs = tabsRef.onSnapshot(async (snapshot) => {
             if (isSyncing) return;
             
-            const changes = snapshot.docChanges();
-            const files = {};
+            console.log('📡 Snapshot reçu, taille:', snapshot.size);
             
+            // Si pas de données, initialiser les valeurs par défaut
+            if (snapshot.size === 0 && isFirstLoad) {
+                isFirstLoad = false;
+                await initDefaultData(uai);
+                return;
+            }
+            
+            const files = {};
             snapshot.forEach(doc => {
                 const data = doc.data();
                 files[data.name] = data.content || '';
             });
             
-            onData('tabs', files, changes);
+            onData('tabs', files);
             updateStatus('success', 'Synchronisé');
         }, (error) => {
             console.error('Erreur listenTabs:', error);
@@ -145,7 +198,6 @@ const Sync = (() => {
         });
     }
     
-    // Écouter l'ordre des onglets
     function listenOrder(uai, onData) {
         if (unsubscribeOrder) unsubscribeOrder();
         
@@ -160,16 +212,12 @@ const Sync = (() => {
             if (doc.exists) {
                 const order = doc.data().order || [];
                 onData('order', order);
-            } else {
-                // Premier chargement, pas d'ordre encore
-                onData('order', null);
             }
         }, (error) => {
             console.error('Erreur listenOrder:', error);
         });
     }
     
-    // Écouter l'onglet courant
     function listenCurrentTab(uai, onData) {
         const currentRef = window.db.collection('etablissements')
             .doc(uai)
@@ -187,11 +235,10 @@ const Sync = (() => {
         });
     }
     
-    // Initialiser la synchronisation pour un UAI
     async function initSync(uai, callbacks) {
         currentUAI = uai;
+        isFirstLoad = true;
         
-        // Vérifier la connexion
         if (!window.db) {
             updateStatus('offline', 'Firebase non disponible');
             return false;
@@ -199,21 +246,18 @@ const Sync = (() => {
         
         updateStatus('syncing', 'Connexion...');
         
-        // Écouter les onglets
-        listenTabs(uai, (type, data, changes) => {
+        listenTabs(uai, (type, data) => {
             if (type === 'tabs') {
-                callbacks.onTabsUpdate(data, changes);
+                callbacks.onTabsUpdate(data);
             }
         });
         
-        // Écouter l'ordre
         listenOrder(uai, (type, data) => {
             if (type === 'order') {
                 callbacks.onOrderUpdate(data);
             }
         });
         
-        // Écouter l'onglet courant
         listenCurrentTab(uai, (type, data) => {
             if (type === 'current') {
                 callbacks.onCurrentTabUpdate(data);
@@ -223,7 +267,6 @@ const Sync = (() => {
         return true;
     }
     
-    // Déconnexion / arrêt des listeners
     function disconnect() {
         if (unsubscribeTabs) {
             unsubscribeTabs();
@@ -237,7 +280,6 @@ const Sync = (() => {
         updateStatus('success', 'Déconnecté');
     }
     
-    // Sauvegarde avec debounce
     function debounceSave(fn, delay = 500) {
         if (pendingSave) clearTimeout(pendingSave);
         pendingSave = setTimeout(() => {
@@ -246,7 +288,6 @@ const Sync = (() => {
         }, delay);
     }
     
-    // Exporter les fonctions
     return {
         initSync,
         disconnect,

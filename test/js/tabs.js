@@ -40,10 +40,15 @@ const Tabs = (() => {
     }
 
     function renderTabs() {
+        console.log('🎨 renderTabs appelé, tabOrder:', AppState.tabOrder);
+        
+        // Nettoyer les anciens onglets (sauf le bouton ajouter s'il existe déjà)
+        const existingAddBtn = document.getElementById("addTabBtn");
         [...tabsContainer.children].forEach(el => {
             if (el.id !== "addTabBtn") el.remove();
         });
 
+        // Créer les onglets
         AppState.tabOrder.forEach(name => {
             const tab = document.createElement("div");
             tab.className = "tab";
@@ -55,8 +60,10 @@ const Tabs = (() => {
 
             tab.addEventListener("contextmenu", (e) => {
                 e.preventDefault();
-                UI.setClickedTab(name);
-                UI.showContextMenu(e.pageX, e.pageY);
+                if (window.UI) {
+                    window.UI.setClickedTab(name);
+                    window.UI.showContextMenu(e.pageX, e.pageY);
+                }
             });
 
             tab.addEventListener("dragstart", (e) => {
@@ -72,34 +79,48 @@ const Tabs = (() => {
                 if (!dragged || dragged === target) return;
                 reorderTabs(dragged, target);
                 renderTabs();
-                Editor.autoSave();
+                if (window.Editor) window.Editor.autoSave();
             });
 
             tabsContainer.insertBefore(tab, addBtn);
         });
 
+        // S'assurer que le bouton ajouter est au bon endroit
+        if (addBtn.parentNode !== tabsContainer) {
+            tabsContainer.appendChild(addBtn);
+        }
+
         updateTabIndicators();
     }
 
     function switchTab(name) {
+        console.log('🔄 switchTab vers:', name);
+        
         if (!AppState.isRestoring && AppState.currentTab !== null && !isRemoteUpdate) {
             AppState.files[AppState.currentTab] = note.value;
         }
         
-        // Si c'est une mise à jour distante, ne pas déclencher de sauvegarde
+        AppState.currentTab = name;
+        
+        // Mettre à jour la valeur du textarea
+        const content = AppState.files[name] || "";
+        if (note.value !== content) {
+            note.value = content;
+        }
+
+        // Mettre à jour la classe active sur les onglets
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        const activeTab = [...tabsContainer.children].find(t => t.dataset && t.dataset.name === name);
+        if (activeTab) activeTab.classList.add("active");
+
+        if (window.Editor) {
+            window.Editor.updateLineCount();
+        }
+        
+        // Sauvegarder l'état (sauf si c'est une mise à jour distante)
         if (!isRemoteUpdate) {
             Storage.saveState();
         }
-
-        AppState.currentTab = name;
-        note.value = AppState.files[name] || "";
-
-        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-        [...tabsContainer.children].forEach(t => {
-            if (t.dataset.name === name) t.classList.add("active");
-        });
-
-        Editor.updateLineCount();
     }
 
     function resetAllTabs() {
@@ -107,17 +128,20 @@ const Tabs = (() => {
             return;
         }
 
-        AppState.files = {};
-        AppState.tabOrder = [
+        const defaultTabs = [
             "000","100","200","300","400","500","600","700","800","900",
             "A","BD","C","M","N","P","R","T","FL"
         ];
 
-        AppState.tabOrder.forEach(name => AppState.files[name] = "");
+        AppState.files = {};
+        AppState.tabOrder = [...defaultTabs];
+
+        defaultTabs.forEach(name => AppState.files[name] = "");
 
         AppState.currentTab = "000";
         note.value = "";
-        Editor.updateLineCount();
+        
+        if (window.Editor) window.Editor.updateLineCount();
 
         Storage.saveState();
         renderTabs();
@@ -129,16 +153,24 @@ const Tabs = (() => {
             const name = prompt("Nom du nouvel onglet :");
             if (!name) return;
 
-            if (!createTab(name)) {
+            if (AppState.files[name]) {
                 alert("Un onglet portant ce nom existe déjà.");
+                return;
+            }
+
+            if (!createTab(name)) {
+                alert("Erreur lors de la création de l'onglet.");
                 return;
             }
 
             renderTabs();
             switchTab(name);
-            Editor.autoSave();
+            if (window.Editor) window.Editor.autoSave();
         });
-        tabsContainer.appendChild(addBtn);
+        
+        if (!tabsContainer.contains(addBtn)) {
+            tabsContainer.appendChild(addBtn);
+        }
     }
 
     function renameTab(oldName, newName) {
@@ -159,7 +191,7 @@ const Tabs = (() => {
 
         renderTabs();
         switchTab(newName);
-        Editor.autoSave();
+        if (window.Editor) window.Editor.autoSave();
     }
 
     function deleteTab(name) {
@@ -176,10 +208,10 @@ const Tabs = (() => {
             note.value = "";
         }
 
-        Editor.updateLineCount();
+        if (window.Editor) window.Editor.updateLineCount();
         renderTabs();
         if (AppState.currentTab) switchTab(AppState.currentTab);
-        Editor.autoSave();
+        if (window.Editor) window.Editor.autoSave();
     }
 
     function replaceAllTabsFromList(list) {
@@ -205,7 +237,8 @@ const Tabs = (() => {
 
         AppState.currentTab = unique[0];
         note.value = "";
-        Editor.updateLineCount();
+        
+        if (window.Editor) window.Editor.updateLineCount();
 
         Storage.saveState();
         renderTabs();
@@ -214,23 +247,31 @@ const Tabs = (() => {
         return true;
     }
     
-    // Callbacks pour les mises à jour distantes
-    function onRemoteUpdate(files, changes) {
+    // Callback pour les mises à jour distantes depuis Firebase
+    function onRemoteUpdate(files) {
+        console.log('🌍 Mise à jour distante reçue, nombre d\'onglets:', Object.keys(files).length);
         isRemoteUpdate = true;
         
         // Mettre à jour les fichiers
         AppState.files = files;
         
-        // Appliquer les changements à l'UI si nécessaire
+        // Si tabOrder est vide, le créer depuis les clés des fichiers
+        if (AppState.tabOrder.length === 0 && Object.keys(files).length > 0) {
+            AppState.tabOrder = Object.keys(files);
+            console.log('📋 tabOrder créé depuis les clés:', AppState.tabOrder);
+            renderTabs();
+        }
+        
+        // Mettre à jour les indicateurs visuels (point vert)
         updateTabIndicators();
         
-        // Si l'onglet courant a changé et qu'on est dessus
+        // Si l'onglet courant existe, mettre à jour l'affichage du textarea
         if (AppState.currentTab && AppState.files[AppState.currentTab] !== undefined) {
             const currentValue = note.value;
             const newValue = AppState.files[AppState.currentTab] || "";
             if (currentValue !== newValue) {
                 note.value = newValue;
-                Editor.updateLineCount();
+                if (window.Editor) window.Editor.updateLineCount();
             }
         }
         
@@ -238,25 +279,24 @@ const Tabs = (() => {
     }
     
     function onOrderUpdate(order) {
+        console.log('📋 Mise à jour de l\'ordre reçue:', order);
         if (order && Array.isArray(order) && order.length > 0) {
             isRemoteUpdate = true;
             AppState.tabOrder = order;
             renderTabs();
             
-            // Re-sélectionner l'onglet courant
-            if (AppState.currentTab) {
-                const tabExists = AppState.tabOrder.includes(AppState.currentTab);
-                if (tabExists) {
-                    switchTab(AppState.currentTab);
-                } else if (AppState.tabOrder.length > 0) {
-                    switchTab(AppState.tabOrder[0]);
-                }
+            // Re-sélectionner l'onglet courant s'il existe
+            if (AppState.currentTab && AppState.tabOrder.includes(AppState.currentTab)) {
+                switchTab(AppState.currentTab);
+            } else if (AppState.tabOrder.length > 0) {
+                switchTab(AppState.tabOrder[0]);
             }
             isRemoteUpdate = false;
         }
     }
     
     function onCurrentTabUpdate(currentTab) {
+        console.log('📍 Mise à jour de l\'onglet courant reçue:', currentTab);
         if (currentTab && currentTab !== AppState.currentTab) {
             isRemoteUpdate = true;
             switchTab(currentTab);
@@ -265,9 +305,21 @@ const Tabs = (() => {
     }
 
     function init() {
+        console.log('📑 Initialisation des onglets');
         initAddButton();
-        renderTabs();
-        if (AppState.currentTab) switchTab(AppState.currentTab);
+        
+        // Si des onglets existent déjà, les afficher
+        if (AppState.tabOrder && AppState.tabOrder.length > 0) {
+            renderTabs();
+            if (AppState.currentTab) {
+                switchTab(AppState.currentTab);
+            } else if (AppState.tabOrder.length > 0) {
+                switchTab(AppState.tabOrder[0]);
+            }
+        } else {
+            // Aucun onglet, on attend Firebase ou on charge les défauts
+            console.log('Aucun onglet trouvé, en attente de données...');
+        }
     }
 
     return {
