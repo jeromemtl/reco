@@ -82,6 +82,17 @@ const Storage = {
         }
     },
 
+    getCurrentUAI() {
+        // Essayer d'abord via Auth, puis via Sync
+        if (window.Auth && window.Auth.getCurrentUAI) {
+            return window.Auth.getCurrentUAI();
+        }
+        if (window.Sync && window.Sync.getCurrentUAI) {
+            return window.Sync.getCurrentUAI();
+        }
+        return null;
+    },
+
     saveState() {
         // Sauvegarde locale
         localStorage.setItem(this.KEYS.FILES, JSON.stringify(AppState.files));
@@ -89,9 +100,11 @@ const Storage = {
         localStorage.setItem(this.KEYS.CURRENT, AppState.currentTab);
         
         // Sauvegarde dans Firestore
-        const uai = window.Sync ? window.Sync.getCurrentUAI() : null;
+        const uai = this.getCurrentUAI();
+        console.log('💾 Sauvegarde - UAI:', uai);
+        
         if (uai && window.db) {
-            console.log('💾 Sauvegarde Firestore pour', uai);
+            console.log('📤 Envoi vers Firestore pour', uai);
             
             for (const [name, content] of Object.entries(AppState.files)) {
                 const docRef = window.db.collection('etablissements')
@@ -125,6 +138,8 @@ const Storage = {
                     lastModified: firebase.firestore.FieldValue.serverTimestamp()
                 }).catch(err => console.error('Erreur sauvegarde courant', err));
             }
+        } else {
+            console.log('⚠️ Pas de sauvegarde Firestore - uai:', uai, 'db:', !!window.db);
         }
     },
 
