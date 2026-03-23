@@ -11,30 +11,24 @@ const Auth = (() => {
     
     let currentUAI = null;
     
-    // Récupérer l'UAI stocké
     function getStoredUAI() {
         return localStorage.getItem('reco_uai');
     }
     
-    // Stocker l'UAI
     function storeUAI(uai) {
         localStorage.setItem('reco_uai', uai.toUpperCase());
     }
     
-    // Effacer l'UAI stocké
     function clearStoredUAI() {
         localStorage.removeItem('reco_uai');
     }
     
-    // Valider le format UAI (8 ou 9 caractères, lettres et chiffres)
     function validateUAI(uai) {
         const cleaned = uai.trim().toUpperCase();
-        // Format UAI: généralement 8 ou 9 caractères alphanumériques
         const regex = /^[A-Z0-9]{7,9}$/;
         return regex.test(cleaned);
     }
     
-    // Afficher une erreur
     function showError(message) {
         loginError.textContent = message;
         loginError.style.display = 'block';
@@ -43,86 +37,96 @@ const Auth = (() => {
         }, 3000);
     }
     
-    // Connexion réussie
+    async function loadDataFromFirestore(uai) {
+        console.log('📥 Chargement des données pour', uai);
+        
+        const tabsSnapshot = await window.db.collection('etablissements').doc(uai).collection('tabs').get();
+        const orderDoc = await window.db.collection('etablissements').doc(uai).collection('metadata').doc('order').get();
+        const currentDoc = await window.db.collection('etablissements').doc(uai).collection('metadata').doc('current').get();
+        
+        const files = {};
+        tabsSnapshot.forEach(doc => {
+            files[doc.id] = doc.data().content || '';
+        });
+        
+        const order = orderDoc.exists ? orderDoc.data().order : Object.keys(files);
+        const current = currentDoc.exists ? currentDoc.data().currentTab : (order.length > 0 ? order[0] : null);
+        
+        AppState.files = files;
+        AppState.tabOrder = order;
+        AppState.currentTab = current;
+        
+        console.log('✅ Données chargées:', order.length, 'onglets');
+        
+        // Afficher les onglets
+        if (window.Tabs) {
+            window.Tabs.renderTabs();
+            if (current) window.Tabs.switchTab(current);
+        }
+    }
+    
     async function onLoginSuccess(uai) {
+        console.log('🔐 Connexion réussie pour', uai);
         currentUAI = uai;
         storeUAI(uai);
         
-        // Mettre à jour l'affichage
         if (currentUAIBadge) {
             currentUAIBadge.textContent = uai;
         }
         
-        // Cacher l'écran de login, afficher l'appli
+        // Afficher l'application
         loginScreen.style.display = 'none';
         mainApp.style.display = 'block';
         
-        // Initialiser la synchronisation
+        // Charger les données depuis Firestore
+        await loadDataFromFirestore(uai);
+        
+        // Initialiser la synchronisation en temps réel
         if (window.Sync && typeof window.Sync.initSync === 'function') {
-            const synced = await window.Sync.initSync(uai, {
-                onTabsUpdate: (files, changes) => {
-                    if (window.Tabs && typeof window.Tabs.onRemoteUpdate === 'function') {
-                        window.Tabs.onRemoteUpdate(files, changes);
-                    }
+            console.log('🔄 Initialisation de la synchronisation...');
+            await window.Sync.initSync(uai, {
+                onTabsUpdate: (files) => {
+                    console.log('📁 Mise à jour temps réel:', Object.keys(files).length);
+                    if (window.Tabs) window.Tabs.onRemoteUpdate(files);
                 },
                 onOrderUpdate: (order) => {
-                    if (window.Tabs && typeof window.Tabs.onOrderUpdate === 'function') {
-                        window.Tabs.onOrderUpdate(order);
-                    }
+                    console.log('📋 Mise à jour ordre:', order);
+                    if (window.Tabs) window.Tabs.onOrderUpdate(order);
                 },
-                onCurrentTabUpdate: (currentTab) => {
-                    if (window.Tabs && typeof window.Tabs.onCurrentTabUpdate === 'function') {
-                        window.Tabs.onCurrentTabUpdate(currentTab);
-                    }
+                onCurrentTabUpdate: (current) => {
+                    console.log('📍 Mise à jour onglet courant:', current);
+                    if (window.Tabs) window.Tabs.onCurrentTabUpdate(current);
                 }
             });
-            
-            if (!synced) {
-                Sync.updateStatus('offline', 'Mode hors ligne');
-            }
-        }
-        
-        // Charger les données locales si pas de synchro
-        if (window.Storage && typeof window.Storage.loadFromLocal === 'function') {
-            window.Storage.loadFromLocal();
         }
     }
     
-    // Déconnexion
     function logout() {
-        if (confirm('Voulez-vous changer d\'établissement ?\nLes données resteront sauvegardées pour cet UAI.')) {
-            // Déconnecter la synchro
+        if (confirm('Voulez-vous changer d\'établissement ?')) {
             if (window.Sync && typeof window.Sync.disconnect === 'function') {
                 window.Sync.disconnect();
             }
-            
-            // Effacer l'UAI stocké
             clearStoredUAI();
             
-            // Réinitialiser l'état de l'application
-            if (window.AppState) {
-                window.AppState.files = {};
-                window.AppState.tabOrder = [];
-                window.AppState.currentTab = null;
-            }
+            // Réinitialiser AppState
+            AppState.files = {};
+            AppState.tabOrder = [];
+            AppState.currentTab = null;
             
-            // Revenir à l'écran de login
-            mainApp.style.display = 'none';
-            loginScreen.style.display = 'flex';
-            
-            // Effacer l'input
-            if (uaiInput) uaiInput.value = '';
-            
-            // Réinitialiser le textarea
+            // Réinitialiser l'affichage
             const note = document.getElementById('note');
             if (note) note.value = '';
+            if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
+                window.Tabs.renderTabs();
+            }
             
-            // Recharger la page pour un état propre
-            // window.location.reload();
+            // Afficher l'écran de connexion
+            mainApp.style.display = 'none';
+            loginScreen.style.display = 'flex';
+            if (uaiInput) uaiInput.value = '';
         }
     }
     
-    // Tentative de connexion
     async function attemptLogin() {
         const uai = uaiInput.value.trim().toUpperCase();
         
@@ -132,11 +136,10 @@ const Auth = (() => {
         }
         
         if (!validateUAI(uai)) {
-            showError('Format UAI invalide (7-9 caractères alphanumériques)');
+            showError('Format UAI invalide (7-9 caractères)');
             return;
         }
         
-        // Désactiver le bouton le temps de la connexion
         loginBtn.disabled = true;
         loginBtn.textContent = 'Connexion...';
         
@@ -151,38 +154,37 @@ const Auth = (() => {
         }
     }
     
-    // Vérifier si déjà connecté
-    function checkExistingLogin() {
+    async function checkExistingLogin() {
         const stored = getStoredUAI();
-        if (stored && validateUAI(stored)) {
-            uaiInput.value = stored;
-            // Appeler directement onLoginSuccess pour recharger les données
-            onLoginSuccess(stored);
-        }
-    }
+        console.log('🔍 Vérification session existante:', stored);
         
-    // Initialisation
+        if (stored && validateUAI(stored)) {
+            console.log('🔄 Session trouvée, reconnexion pour', stored);
+            uaiInput.value = stored;
+            await onLoginSuccess(stored);
+            return true;
+        }
+        return false;
+    }
+    
     function init() {
+        console.log('🔐 Initialisation du module Auth');
+        
         if (loginBtn) {
             loginBtn.addEventListener('click', attemptLogin);
         }
         
         if (uaiInput) {
             uaiInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    attemptLogin();
-                }
+                if (e.key === 'Enter') attemptLogin();
             });
         }
         
-        // Boutons de déconnexion
         logoutBtns.forEach(btn => {
-            if (btn) {
-                btn.addEventListener('click', logout);
-            }
+            if (btn) btn.addEventListener('click', logout);
         });
         
-        // Vérifier s'il y a une session existante
+        // Vérifier si déjà connecté
         checkExistingLogin();
     }
     
