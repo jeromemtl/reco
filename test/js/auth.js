@@ -155,12 +155,12 @@ const Auth = (() => {
     function checkExistingLogin() {
         const stored = getStoredUAI();
         if (stored && validateUAI(stored)) {
-            // Auto-connexion
             uaiInput.value = stored;
-            attemptLogin();
+            // Appeler directement onLoginSuccess pour recharger les données
+            onLoginSuccess(stored);
         }
     }
-    
+        
     // Initialisation
     function init() {
         if (loginBtn) {

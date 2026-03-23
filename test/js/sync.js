@@ -6,7 +6,6 @@ const Sync = (() => {
     let unsubscribeOrder = null;
     let isSyncing = false;
     let pendingSave = null;
-    let isFirstLoad = true;
     
     const syncStatus = document.getElementById('syncStatus');
     const syncIcon = syncStatus?.querySelector('.sync-icon');
@@ -44,7 +43,6 @@ const Sync = (() => {
         }
     }
     
-    // INITIALISER LES DONNÉES PAR DÉFAUT DANS FIRESTORE
     async function initDefaultData(uai) {
         console.log('📦 Initialisation des données par défaut pour', uai);
         
@@ -86,10 +84,8 @@ const Sync = (() => {
         AppState.tabOrder = [...defaultTabs];
         AppState.currentTab = "000";
         
-        // Sauvegarder en local
         Storage.saveState();
         
-        // Afficher les onglets
         if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
             window.Tabs.renderTabs();
         }
@@ -178,8 +174,8 @@ const Sync = (() => {
             console.log('📡 Snapshot reçu, taille:', snapshot.size);
             
             // Si pas de données, initialiser les valeurs par défaut
-            if (snapshot.size === 0 && isFirstLoad) {
-                isFirstLoad = false;
+            if (snapshot.size === 0) {
+                console.log('📦 Aucune donnée trouvée pour', uai, '- initialisation...');
                 await initDefaultData(uai);
                 return;
             }
@@ -237,7 +233,6 @@ const Sync = (() => {
     
     async function initSync(uai, callbacks) {
         currentUAI = uai;
-        isFirstLoad = true;
         
         if (!window.db) {
             updateStatus('offline', 'Firebase non disponible');
@@ -288,6 +283,10 @@ const Sync = (() => {
         }, delay);
     }
     
+    function getCurrentUAI() {
+        return currentUAI;
+    }
+    
     return {
         initSync,
         disconnect,
@@ -295,7 +294,7 @@ const Sync = (() => {
         saveOrderToFirestore,
         saveCurrentTabToFirestore,
         updateStatus,
-        getCurrentUAI: () => currentUAI,
+        getCurrentUAI,
         isSyncing: () => isSyncing,
         debounceSave
     };
