@@ -10,6 +10,7 @@ const Auth = (() => {
     const logoutBtns = document.querySelectorAll('#logoutBtn, #logoutBtnMobile');
     
     let currentUAI = null;
+    let tabsDisplayed = false;
     
     function getStoredUAI() {
         return localStorage.getItem('reco_uai');
@@ -58,20 +59,29 @@ const Auth = (() => {
             AppState.currentTab = current;
             
             console.log('✅ Données chargées:', order.length, 'onglets');
-            console.log('📋 AppState.tabOrder:', AppState.tabOrder);
             
-            // AFFICHER DIRECTEMENT LES ONGLETS
-            if (window.Tabs && window.Tabs.renderTabs) {
-                console.log('🎨 Appel direct de renderTabs()');
-                window.Tabs.renderTabs();
-                if (current) {
-                    window.Tabs.switchTab(current);
-                } else if (order.length > 0) {
-                    window.Tabs.switchTab(order[0]);
+            // Fonction récursive pour attendre que Tabs soit prêt
+            const waitForTabs = () => {
+                // Vérifier si Tabs est disponible (différentes façons)
+                const tabsAvailable = (typeof Tabs !== 'undefined' && Tabs && typeof Tabs.renderTabs === 'function');
+                
+                if (tabsAvailable && !tabsDisplayed) {
+                    console.log('🎨 Affichage des onglets...');
+                    Tabs.renderTabs();
+                    if (current) {
+                        Tabs.switchTab(current);
+                    } else if (order.length > 0) {
+                        Tabs.switchTab(order[0]);
+                    }
+                    tabsDisplayed = true;
+                } else if (!tabsAvailable && !tabsDisplayed) {
+                    console.log('⏳ En attente de Tabs...');
+                    setTimeout(waitForTabs, 100);
                 }
-            } else {
-                console.error('❌ Tabs n\'est pas disponible !');
-            }
+            };
+            
+            // Lancer l'attente
+            waitForTabs();
             
         } catch (error) {
             console.error('❌ Erreur chargement Firestore:', error);
@@ -129,6 +139,7 @@ const Auth = (() => {
             AppState.files = {};
             AppState.tabOrder = [];
             AppState.currentTab = null;
+            tabsDisplayed = false;
             
             // Réinitialiser l'affichage
             const note = document.getElementById('note');
