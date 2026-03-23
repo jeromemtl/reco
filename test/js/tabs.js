@@ -5,10 +5,34 @@ const Tabs = (() => {
     const tabsContainer = document.getElementById("tabs");
     
     let isRemoteUpdate = false;
+    let addBtn = null;
 
-    const addBtn = document.createElement("div");
-    addBtn.id = "addTabBtn";
-    addBtn.textContent = "+ Ajouter";
+    function getAddButton() {
+        if (!addBtn || !tabsContainer.contains(addBtn)) {
+            addBtn = document.createElement("div");
+            addBtn.id = "addTabBtn";
+            addBtn.textContent = "+ Ajouter";
+            addBtn.addEventListener("click", () => {
+                const name = prompt("Nom du nouvel onglet :");
+                if (!name) return;
+
+                if (AppState.files[name]) {
+                    alert("Un onglet portant ce nom existe déjà.");
+                    return;
+                }
+
+                if (!createTab(name)) {
+                    alert("Erreur lors de la création de l'onglet.");
+                    return;
+                }
+
+                renderTabs();
+                switchTab(name);
+                if (window.Editor) window.Editor.autoSave();
+            });
+        }
+        return addBtn;
+    }
 
     function createTab(name) {
         if (AppState.files[name]) return false;
@@ -42,11 +66,10 @@ const Tabs = (() => {
     function renderTabs() {
         console.log('🎨 renderTabs appelé, tabOrder:', AppState.tabOrder);
         
-        // Nettoyer les anciens onglets (sauf le bouton ajouter s'il existe déjà)
-        const existingAddBtn = document.getElementById("addTabBtn");
-        [...tabsContainer.children].forEach(el => {
-            if (el.id !== "addTabBtn") el.remove();
-        });
+        // Vider le conteneur (garder seulement le bouton ajouter s'il existe)
+        while (tabsContainer.firstChild) {
+            tabsContainer.removeChild(tabsContainer.firstChild);
+        }
 
         // Créer les onglets
         AppState.tabOrder.forEach(name => {
@@ -82,13 +105,12 @@ const Tabs = (() => {
                 if (window.Editor) window.Editor.autoSave();
             });
 
-            tabsContainer.insertBefore(tab, addBtn);
+            tabsContainer.appendChild(tab);
         });
 
-        // S'assurer que le bouton ajouter est au bon endroit
-        if (addBtn.parentNode !== tabsContainer) {
-            tabsContainer.appendChild(addBtn);
-        }
+        // Ajouter le bouton à la fin
+        const btn = getAddButton();
+        tabsContainer.appendChild(btn);
 
         updateTabIndicators();
     }
@@ -110,7 +132,7 @@ const Tabs = (() => {
 
         // Mettre à jour la classe active sur les onglets
         document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-        const activeTab = [...tabsContainer.children].find(t => t.dataset && t.dataset.name === name);
+        const activeTab = document.querySelector(`.tab[data-name="${name}"]`);
         if (activeTab) activeTab.classList.add("active");
 
         if (window.Editor) {
@@ -146,31 +168,6 @@ const Tabs = (() => {
         Storage.saveState();
         renderTabs();
         switchTab("000");
-    }
-
-    function initAddButton() {
-        addBtn.addEventListener("click", () => {
-            const name = prompt("Nom du nouvel onglet :");
-            if (!name) return;
-
-            if (AppState.files[name]) {
-                alert("Un onglet portant ce nom existe déjà.");
-                return;
-            }
-
-            if (!createTab(name)) {
-                alert("Erreur lors de la création de l'onglet.");
-                return;
-            }
-
-            renderTabs();
-            switchTab(name);
-            if (window.Editor) window.Editor.autoSave();
-        });
-        
-        if (!tabsContainer.contains(addBtn)) {
-            tabsContainer.appendChild(addBtn);
-        }
     }
 
     function renameTab(oldName, newName) {
@@ -306,7 +303,6 @@ const Tabs = (() => {
 
     function init() {
         console.log('📑 Initialisation des onglets');
-        initAddButton();
         
         // Si des onglets existent déjà, les afficher
         if (AppState.tabOrder && AppState.tabOrder.length > 0) {
