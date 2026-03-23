@@ -6,6 +6,7 @@ const Sync = (() => {
     let unsubscribeOrder = null;
     let isSyncing = false;
     let pendingSave = null;
+    let initializationDone = false;
     
     const syncStatus = document.getElementById('syncStatus');
     const syncIcon = syncStatus?.querySelector('.sync-icon');
@@ -44,6 +45,11 @@ const Sync = (() => {
     }
     
     async function initDefaultData(uai) {
+        if (initializationDone) {
+            console.log('⚠️ Initialisation déjà effectuée, annulation');
+            return;
+        }
+        
         console.log('📦 Initialisation des données par défaut pour', uai);
         
         const defaultTabs = [
@@ -92,6 +98,7 @@ const Sync = (() => {
             window.Tabs.switchTab("000");
         }
         
+        initializationDone = true;
         return true;
     }
     
@@ -171,10 +178,24 @@ const Sync = (() => {
             
             console.log('📡 Snapshot reçu, taille:', snapshot.size);
             
-            if (snapshot.size === 0) {
-                console.log('📦 Aucune donnée trouvée pour', uai, '- initialisation...');
-                await initDefaultData(uai);
-                return;
+            // Vérifier si des données existent réellement
+            const hasData = snapshot.size > 0;
+            
+            if (!hasData && !initializationDone) {
+                // Vérifier si localStorage a des données avant d'initialiser
+                const savedFiles = localStorage.getItem('cdiFiles');
+                const hasLocalData = savedFiles && Object.keys(JSON.parse(savedFiles)).length > 0;
+                
+                if (!hasLocalData) {
+                    console.log('📦 Aucune donnée trouvée, initialisation...');
+                    await initDefaultData(uai);
+                    return;
+                } else {
+                    console.log('📦 Données locales trouvées, pas d\'initialisation');
+                    // Charger depuis localStorage
+                    Storage.loadFromLocal();
+                    return;
+                }
             }
             
             const files = {};
@@ -183,6 +204,7 @@ const Sync = (() => {
                 files[data.name] = data.content || '';
             });
             
+            console.log('📄 Contenu chargé pour 000:', files['000']?.substring(0, 50));
             onData('tabs', files);
             updateStatus('success', 'Synchronisé');
         }, (error) => {
@@ -230,6 +252,7 @@ const Sync = (() => {
     
     async function initSync(uai, callbacks) {
         currentUAI = uai;
+        initializationDone = false;
         
         if (!window.db) {
             updateStatus('offline', 'Firebase non disponible');
@@ -269,6 +292,7 @@ const Sync = (() => {
             unsubscribeOrder = null;
         }
         currentUAI = null;
+        initializationDone = false;
         updateStatus('success', 'Déconnecté');
     }
     
