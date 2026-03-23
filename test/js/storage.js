@@ -83,13 +83,19 @@ const Storage = {
     },
 
     getCurrentUAI() {
-        // Essayer d'abord via Auth, puis via Sync
-        if (window.Auth && window.Auth.getCurrentUAI) {
-            return window.Auth.getCurrentUAI();
+        // Essayer d'abord via Auth
+        if (window.Auth && typeof window.Auth.getCurrentUAI === 'function') {
+            const uai = window.Auth.getCurrentUAI();
+            if (uai) return uai;
         }
-        if (window.Sync && window.Sync.getCurrentUAI) {
-            return window.Sync.getCurrentUAI();
+        // Essayer via Sync
+        if (window.Sync && typeof window.Sync.getCurrentUAI === 'function') {
+            const uai = window.Sync.getCurrentUAI();
+            if (uai) return uai;
         }
+        // Fallback sur localStorage
+        const stored = localStorage.getItem('reco_uai');
+        if (stored) return stored;
         return null;
     },
 
@@ -101,7 +107,7 @@ const Storage = {
         
         // Sauvegarde dans Firestore
         const uai = this.getCurrentUAI();
-        console.log('💾 Sauvegarde - UAI:', uai);
+        console.log('💾 Sauvegarde - UAI récupéré:', uai);
         
         if (uai && window.db) {
             console.log('📤 Envoi vers Firestore pour', uai);
