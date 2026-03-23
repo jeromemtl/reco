@@ -40,28 +40,45 @@ const Auth = (() => {
     async function loadDataFromFirestore(uai) {
         console.log('📥 Chargement des données pour', uai);
         
-        const tabsSnapshot = await window.db.collection('etablissements').doc(uai).collection('tabs').get();
-        const orderDoc = await window.db.collection('etablissements').doc(uai).collection('metadata').doc('order').get();
-        const currentDoc = await window.db.collection('etablissements').doc(uai).collection('metadata').doc('current').get();
-        
-        const files = {};
-        tabsSnapshot.forEach(doc => {
-            files[doc.id] = doc.data().content || '';
-        });
-        
-        const order = orderDoc.exists ? orderDoc.data().order : Object.keys(files);
-        const current = currentDoc.exists ? currentDoc.data().currentTab : (order.length > 0 ? order[0] : null);
-        
-        AppState.files = files;
-        AppState.tabOrder = order;
-        AppState.currentTab = current;
-        
-        console.log('✅ Données chargées:', order.length, 'onglets');
-        
-        // Afficher les onglets
-        if (window.Tabs) {
-            window.Tabs.renderTabs();
-            if (current) window.Tabs.switchTab(current);
+        try {
+            const tabsSnapshot = await window.db.collection('etablissements').doc(uai).collection('tabs').get();
+            const orderDoc = await window.db.collection('etablissements').doc(uai).collection('metadata').doc('order').get();
+            const currentDoc = await window.db.collection('etablissements').doc(uai).collection('metadata').doc('current').get();
+            
+            const files = {};
+            tabsSnapshot.forEach(doc => {
+                files[doc.id] = doc.data().content || '';
+            });
+            
+            const order = orderDoc.exists ? orderDoc.data().order : Object.keys(files);
+            const current = currentDoc.exists ? currentDoc.data().currentTab : (order.length > 0 ? order[0] : null);
+            
+            AppState.files = files;
+            AppState.tabOrder = order;
+            AppState.currentTab = current;
+            
+            console.log('✅ Données chargées:', order.length, 'onglets');
+            
+            // Attendre que Tabs soit prêt et afficher
+            const displayTabs = () => {
+                if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
+                    console.log('🎨 Affichage des onglets...');
+                    window.Tabs.renderTabs();
+                    if (current) {
+                        window.Tabs.switchTab(current);
+                    } else if (order.length > 0) {
+                        window.Tabs.switchTab(order[0]);
+                    }
+                } else {
+                    console.log('⏳ Tabs pas encore prêt, nouvel essai...');
+                    setTimeout(displayTabs, 100);
+                }
+            };
+            
+            displayTabs();
+            
+        } catch (error) {
+            console.error('❌ Erreur chargement Firestore:', error);
         }
     }
     
@@ -83,21 +100,25 @@ const Auth = (() => {
         
         // Initialiser la synchronisation en temps réel
         if (window.Sync && typeof window.Sync.initSync === 'function') {
-            console.log('🔄 Initialisation de la synchronisation...');
-            await window.Sync.initSync(uai, {
-                onTabsUpdate: (files) => {
-                    console.log('📁 Mise à jour temps réel:', Object.keys(files).length);
-                    if (window.Tabs) window.Tabs.onRemoteUpdate(files);
-                },
-                onOrderUpdate: (order) => {
-                    console.log('📋 Mise à jour ordre:', order);
-                    if (window.Tabs) window.Tabs.onOrderUpdate(order);
-                },
-                onCurrentTabUpdate: (current) => {
-                    console.log('📍 Mise à jour onglet courant:', current);
-                    if (window.Tabs) window.Tabs.onCurrentTabUpdate(current);
-                }
-            });
+            console.log('🔄 Initialisation de la synchronisation temps réel...');
+            try {
+                await window.Sync.initSync(uai, {
+                    onTabsUpdate: (files) => {
+                        console.log('📁 Mise à jour temps réel:', Object.keys(files).length);
+                        if (window.Tabs) window.Tabs.onRemoteUpdate(files);
+                    },
+                    onOrderUpdate: (order) => {
+                        console.log('📋 Mise à jour ordre:', order);
+                        if (window.Tabs) window.Tabs.onOrderUpdate(order);
+                    },
+                    onCurrentTabUpdate: (current) => {
+                        console.log('📍 Mise à jour onglet courant:', current);
+                        if (window.Tabs) window.Tabs.onCurrentTabUpdate(current);
+                    }
+                });
+            } catch (error) {
+                console.error('❌ Erreur initialisation sync:', error);
+            }
         }
     }
     
