@@ -78,7 +78,6 @@ const Sync = (() => {
         
         console.log('✅ Données par défaut initialisées');
         
-        // Mettre à jour l'état local
         AppState.files = {};
         defaultTabs.forEach(name => { AppState.files[name] = ""; });
         AppState.tabOrder = [...defaultTabs];
@@ -114,7 +113,6 @@ const Sync = (() => {
             return true;
         } catch (error) {
             console.error('Erreur saveTabToFirestore:', error);
-            updateStatus('error', 'Erreur de sauvegarde');
             return false;
         }
     }
@@ -173,7 +171,6 @@ const Sync = (() => {
             
             console.log('📡 Snapshot reçu, taille:', snapshot.size);
             
-            // Si pas de données, initialiser les valeurs par défaut
             if (snapshot.size === 0) {
                 console.log('📦 Aucune donnée trouvée pour', uai, '- initialisation...');
                 await initDefaultData(uai);

@@ -4,7 +4,8 @@ const AppState = {
     files: {},
     tabOrder: [],
     currentTab: null,
-    isRestoring: true
+    isRestoring: true,
+    currentUAI: null
 };
 
 const Storage = {
@@ -39,23 +40,92 @@ const Storage = {
             }
             AppState.currentTab = savedCurrent || (AppState.tabOrder.length > 0 ? AppState.tabOrder[0] : null);
         } else {
-            const defaults = [
-                "000","100","200","300","400","500","600","700","800","900",
-                "A","BD","C","M","N","P","R","T","FL"
-            ];
-            defaults.forEach(name => {
-                AppState.files[name] = "";
-                AppState.tabOrder.push(name);
-            });
-            AppState.currentTab = "000";
-            this.saveState();
+            this.loadDefaults();
+        }
+    },
+    
+    loadDefaults() {
+        const defaults = [
+            "000","100","200","300","400","500","600","700","800","900",
+            "A","BD","C","M","N","P","R","T","FL"
+        ];
+        defaults.forEach(name => {
+            AppState.files[name] = "";
+            AppState.tabOrder.push(name);
+        });
+        AppState.currentTab = "000";
+        this.saveState();
+    },
+    
+    loadFromLocal() {
+        const savedFiles = localStorage.getItem(this.KEYS.FILES);
+        const savedOrder = localStorage.getItem(this.KEYS.ORDER);
+        const savedCurrent = localStorage.getItem(this.KEYS.CURRENT);
+        
+        if (savedFiles && savedOrder) {
+            try {
+                AppState.files = JSON.parse(savedFiles) || {};
+                AppState.tabOrder = JSON.parse(savedOrder) || [];
+                AppState.currentTab = savedCurrent || (AppState.tabOrder.length > 0 ? AppState.tabOrder[0] : null);
+                
+                if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
+                    window.Tabs.renderTabs();
+                }
+                if (window.Tabs && typeof window.Tabs.switchTab === 'function' && AppState.currentTab) {
+                    window.Tabs.switchTab(AppState.currentTab);
+                }
+            } catch (e) {
+                this.loadDefaults();
+            }
+        } else {
+            this.loadDefaults();
         }
     },
 
     saveState() {
+        // Sauvegarde locale
         localStorage.setItem(this.KEYS.FILES, JSON.stringify(AppState.files));
         localStorage.setItem(this.KEYS.ORDER, JSON.stringify(AppState.tabOrder));
         localStorage.setItem(this.KEYS.CURRENT, AppState.currentTab);
+        
+        // Sauvegarde dans Firestore
+        const uai = window.Sync ? window.Sync.getCurrentUAI() : null;
+        if (uai && window.db) {
+            console.log('💾 Sauvegarde Firestore pour', uai);
+            
+            for (const [name, content] of Object.entries(AppState.files)) {
+                const docRef = window.db.collection('etablissements')
+                    .doc(uai)
+                    .collection('tabs')
+                    .doc(name);
+                
+                docRef.set({
+                    name: name,
+                    content: content,
+                    lastModified: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(err => console.error('Erreur sauvegarde', name, err));
+            }
+            
+            const orderRef = window.db.collection('etablissements')
+                .doc(uai)
+                .collection('metadata')
+                .doc('order');
+            orderRef.set({
+                order: AppState.tabOrder,
+                lastModified: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(err => console.error('Erreur sauvegarde ordre', err));
+            
+            if (AppState.currentTab) {
+                const currentRef = window.db.collection('etablissements')
+                    .doc(uai)
+                    .collection('metadata')
+                    .doc('current');
+                currentRef.set({
+                    currentTab: AppState.currentTab,
+                    lastModified: firebase.firestore.FieldValue.serverTimestamp()
+                }).catch(err => console.error('Erreur sauvegarde courant', err));
+            }
+        }
     },
 
     saveTheme(mode) {

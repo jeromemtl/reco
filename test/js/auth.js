@@ -60,9 +60,7 @@ const Auth = (() => {
             
             console.log('✅ Données chargées:', order.length, 'onglets');
             
-            // Fonction récursive pour attendre que Tabs soit prêt
             const waitForTabs = () => {
-                // Vérifier si Tabs est disponible (différentes façons)
                 const tabsAvailable = (typeof Tabs !== 'undefined' && Tabs && typeof Tabs.renderTabs === 'function');
                 
                 if (tabsAvailable && !tabsDisplayed) {
@@ -80,7 +78,6 @@ const Auth = (() => {
                 }
             };
             
-            // Lancer l'attente
             waitForTabs();
             
         } catch (error) {
@@ -97,14 +94,11 @@ const Auth = (() => {
             currentUAIBadge.textContent = uai;
         }
         
-        // Afficher l'application
         loginScreen.style.display = 'none';
         mainApp.style.display = 'block';
         
-        // Charger les données depuis Firestore
         await loadDataFromFirestore(uai);
         
-        // Initialiser la synchronisation en temps réel
         if (window.Sync && typeof window.Sync.initSync === 'function') {
             console.log('🔄 Initialisation de la synchronisation temps réel...');
             try {
@@ -135,20 +129,17 @@ const Auth = (() => {
             }
             clearStoredUAI();
             
-            // Réinitialiser AppState
             AppState.files = {};
             AppState.tabOrder = [];
             AppState.currentTab = null;
             tabsDisplayed = false;
             
-            // Réinitialiser l'affichage
             const note = document.getElementById('note');
             if (note) note.value = '';
             if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
                 window.Tabs.renderTabs();
             }
             
-            // Afficher l'écran de connexion
             mainApp.style.display = 'none';
             loginScreen.style.display = 'flex';
             if (uaiInput) uaiInput.value = '';
@@ -212,7 +203,6 @@ const Auth = (() => {
             if (btn) btn.addEventListener('click', logout);
         });
         
-        // Vérifier si déjà connecté
         checkExistingLogin();
     }
     
@@ -223,7 +213,6 @@ const Auth = (() => {
     };
 })();
 
-// Initialisation au chargement
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => Auth.init());
 } else {

@@ -8,15 +8,12 @@
     <!-- Librairie scanner caméra -->
     <script src="https://unpkg.com/html5-qrcode"></script>
     
-    <!-- ================================================== -->
-    <!-- Firebase SDK (version compat - CORRIGÉE)           -->
-    <!-- ================================================== -->
+    <!-- Firebase SDK (version compat) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
 
     <script>
-        // Configuration Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyBvMFa8D9FtOkirqyq4rNQ1etuw45v2BiU",
             authDomain: "recolement974.firebaseapp.com",
@@ -27,18 +24,15 @@
             measurementId: "G-68GLWQQC9V"
         };
 
-        // Initialiser Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const analytics = firebase.analytics();
         
-        // Exposer globalement pour les autres scripts
         window.db = db;
         window.firebaseApp = firebase.app();
         
         console.log('✅ Firebase initialisé avec succès');
     </script>
-    
 </head>
 <body>
 
@@ -66,10 +60,8 @@
             <h2>Reco <span id="currentUAI" class="uai-badge"></span></h2>
         </div>
 
-        <!-- Menu mobile overlay -->
         <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
         
-        <!-- Menu latéral mobile -->
         <nav class="mobile-nav" id="mobileNav">
             <div class="mobile-nav-header">
                 <h3>Menu</h3>
@@ -111,7 +103,6 @@
             </div>
         </nav>
 
-        <!-- Barre d'outils desktop -->
         <div class="toolbar desktop-toolbar">
             <button id="cameraScanBtn" class="icon-btn" data-tooltip="Scanner avec la caméra">📷</button>
             <button id="saveBtnTop" class="icon-btn" data-tooltip="Exporter l'onglet actuel">📤</button>
@@ -137,7 +128,6 @@ Vous pouvez :
 – la touche Tab est automatiquement convertie en retour à la ligne
 "></textarea>
 
-    <!-- Indicateur de synchronisation -->
     <div id="syncStatus" class="sync-status">
         <span class="sync-icon">☁️</span>
         <span class="sync-text">Synchronisé</span>
@@ -165,7 +155,6 @@ Vous pouvez :
     <div id="deleteOption">🗑️ Supprimer</div>
 </div>
 
-<!-- Remplacer les onglets -->
 <div id="replaceModal" class="modal">
     <div class="modal-content">
         <h3>Remplacer tous les onglets</h3>
@@ -178,7 +167,6 @@ Vous pouvez :
     </div>
 </div>
 
-<!-- Statistiques -->
 <div id="statsModal" class="modal">
     <div class="modal-content">
         <h3>Statistiques</h3>
@@ -190,7 +178,6 @@ Vous pouvez :
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="js/storage.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/auth.js"></script>

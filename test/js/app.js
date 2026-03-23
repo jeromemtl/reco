@@ -8,10 +8,6 @@
     const resetBtnTop = document.getElementById("resetBtnTop");
     const note = document.getElementById("note");
     
-    // Attendre que Auth soit initialisé avant de charger l'état
-    // L'état sera chargé après connexion
-
-    // Fonctions d'export avec confirmation
     const saveFile = () => {
         if (!AppState.currentTab) {
             alert("Aucun onglet sélectionné");
@@ -54,7 +50,6 @@
         }
     };
 
-    // Raccourcis clavier
     const handleGlobalKeyDown = (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
@@ -76,7 +71,6 @@
         }
     };
 
-    // Sauvegarde avant fermeture
     window.addEventListener("beforeunload", () => {
         if (AppState.currentTab !== null) {
             AppState.files[AppState.currentTab] = note.value;
@@ -84,7 +78,6 @@
         }
     });
 
-    // Sauvegarde périodique (toutes les 30s)
     setInterval(() => {
         if (AppState.currentTab !== null && !AppState.isRestoring) {
             AppState.files[AppState.currentTab] = note.value;
@@ -92,7 +85,6 @@
         }
     }, 30000);
 
-    // Détection mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (isMobile) {
         document.body.classList.add('mobile-device');
@@ -103,21 +95,14 @@
         }
     }
 
-    // Initialisation des événements (après chargement)
     if (saveBtnTop) saveBtnTop.addEventListener("click", saveFile);
     if (saveAllBtnTop) saveAllBtnTop.addEventListener("click", saveAllTabs);
     if (resetBtnTop) resetBtnTop.addEventListener("click", Tabs.resetAllTabs);
     document.addEventListener("keydown", handleGlobalKeyDown);
 
-    // Initialisation des modules
-    console.log("📦 Initialisation des modules...");
     UI.init();
     Theme.init();
     
-    // Note: Editor et Tabs seront initialisés après connexion
-    // Ils sont appelés dans auth.js après login
-    
-    // Initialisation du scanner
     if (typeof CameraScanner !== 'undefined') {
         console.log("📷 Initialisation du CameraScanner");
         CameraScanner.init();
@@ -125,7 +110,6 @@
         console.error("❌ CameraScanner non trouvé");
     }
 
-    // Fin de la restauration (sera mis à jour après login)
     AppState.isRestoring = false;
     
     console.log("✅ Application prête en attente de connexion");

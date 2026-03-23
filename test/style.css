@@ -27,9 +27,6 @@
     box-sizing: border-box;
 }
 
-/* --------------------------------------------------
-   BASE
--------------------------------------------------- */
 body {
     font-family: sans-serif;
     margin: 20px;
@@ -54,9 +51,6 @@ textarea {
     resize: vertical;
 }
 
-/* --------------------------------------------------
-   ÉCRAN DE CONNEXION UAI
--------------------------------------------------- */
 .login-screen {
     position: fixed;
     top: 0;
@@ -161,9 +155,6 @@ body.dark .login-card input {
     display: none;
 }
 
-/* --------------------------------------------------
-   INDICATEUR DE SYNCHRONISATION
--------------------------------------------------- */
 .sync-status {
     position: fixed;
     top: 10px;
@@ -203,10 +194,6 @@ body.dark .sync-status {
     100% { opacity: 1; }
 }
 
-.sync-icon {
-    font-size: 0.9rem;
-}
-
 .uai-badge {
     background: var(--primary);
     color: white;
@@ -217,9 +204,6 @@ body.dark .sync-status {
     font-weight: normal;
 }
 
-/* --------------------------------------------------
-   MODE SOMBRE
--------------------------------------------------- */
 body.dark {
     background: var(--bg-dark);
     color: var(--text-dark);
@@ -275,9 +259,6 @@ body.dark .app-footer {
     border-top-color: #444;
 }
 
-/* --------------------------------------------------
-   FOOTER
--------------------------------------------------- */
 .app-footer {
     position: fixed;
     bottom: 0;
@@ -342,9 +323,6 @@ body.dark #lineCount {
     color: var(--text-dark);
 }
 
-/* --------------------------------------------------
-   EN-TÊTE ET MENU HAMBURGER
--------------------------------------------------- */
 .header {
     display: flex;
     justify-content: space-between;
@@ -395,9 +373,6 @@ body.dark .hamburger-menu span {
     transform: translateY(-10px) rotate(-45deg);
 }
 
-/* --------------------------------------------------
-   MENU LATÉRAL MOBILE
--------------------------------------------------- */
 .mobile-nav {
     position: fixed;
     top: 0;
@@ -511,9 +486,6 @@ body.dark .mobile-nav-btn:hover {
     display: block;
 }
 
-/* --------------------------------------------------
-   BARRE D'OUTILS DESKTOP
--------------------------------------------------- */
 .desktop-toolbar {
     display: flex;
     gap: 10px;
@@ -521,9 +493,6 @@ body.dark .mobile-nav-btn:hover {
     flex-wrap: wrap;
 }
 
-/* --------------------------------------------------
-   ONGLETS
--------------------------------------------------- */
 .tabs {
     margin-top: 10px;
     display: flex;
@@ -567,9 +536,6 @@ body.dark #addTabBtn {
     background: var(--tab-bg-dark);
 }
 
-/* --------------------------------------------------
-   BOUTONS ICÔNES + TOOLTIPS
--------------------------------------------------- */
 .icon-btn {
     position: relative;
     font-size: 2rem;
@@ -615,9 +581,6 @@ body.dark #addTabBtn {
     opacity: 0.95;
 }
 
-/* --------------------------------------------------
-   MENU CONTEXTUEL
--------------------------------------------------- */
 #contextMenu {
     position: absolute;
     background: white;
@@ -638,9 +601,6 @@ body.dark #addTabBtn {
     background: #eee;
 }
 
-/* --------------------------------------------------
-   MODALES
--------------------------------------------------- */
 .modal {
     display: none;
     position: fixed;
@@ -738,9 +698,6 @@ body.dark #statsSave:hover {
     background: #256628;
 }
 
-/* --------------------------------------------------
-   STATISTIQUES
--------------------------------------------------- */
 #statsOutput {
     white-space: pre-wrap;
     background: #f5f5f5;
@@ -752,31 +709,6 @@ body.dark #statsSave:hover {
     font-size: 0.9rem;
 }
 
-/* --------------------------------------------------
-   SCANNER
--------------------------------------------------- */
-#scanToggleBtn.active {
-    background-color: var(--success);
-    color: white;
-    border-radius: 5px;
-}
-
-#scanIndicator {
-    animation: pulse 2s infinite;
-}
-
-.scan-flash {
-    animation: scanFlash 0.2s ease;
-}
-
-@keyframes scanFlash {
-    0% { background-color: #e8f5e8; }
-    100% { background-color: transparent; }
-}
-
-/* --------------------------------------------------
-   SCANNER CAMÉRA
--------------------------------------------------- */
 #scanner-overlay {
     position: fixed;
     top: 0;
@@ -947,9 +879,6 @@ body.dark .last-code-display {
     background: var(--primary-dark);
 }
 
-/* --------------------------------------------------
-   RESPONSIVE MOBILE
--------------------------------------------------- */
 @media (max-width: 768px) {
     body {
         margin: 10px;

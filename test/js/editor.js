@@ -7,8 +7,10 @@ const Editor = (() => {
     const fontSizeSelect = document.getElementById("fontSizeSelect");
 
     function showSaveFeedback() {
-        saveFeedback.classList.add("visible");
-        setTimeout(() => saveFeedback.classList.remove("visible"), 600);
+        if (saveFeedback) {
+            saveFeedback.classList.add("visible");
+            setTimeout(() => saveFeedback.classList.remove("visible"), 600);
+        }
     }
 
     function updateLineCount() {
@@ -23,7 +25,7 @@ const Editor = (() => {
         AppState.files[AppState.currentTab] = note.value;
         Storage.saveState();
         showSaveFeedback();
-        Tabs.updateTabIndicators();
+        if (window.Tabs) window.Tabs.updateTabIndicators();
     }
 
     function handleEnter(e) {
@@ -79,7 +81,6 @@ const Editor = (() => {
             handleBackspace(e);
         });
         
-        // Sauvegarde sur input (pour la frappe continue)
         note.addEventListener("input", () => {
             updateLineCount();
             autoSave();

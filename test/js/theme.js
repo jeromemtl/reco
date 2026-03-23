@@ -2,17 +2,22 @@
 
 const Theme = (() => {
     const themeBtn = document.getElementById("themeBtnTop");
+    const themeBtnMobile = document.getElementById("themeBtnTopMobile");
 
     function applyTheme() {
         const mode = Storage.loadTheme();
         if (mode === "dark") {
             document.body.classList.add("dark");
-            themeBtn.textContent = "☀️";
-            themeBtn.dataset.tooltip = "Mode clair";
+            if (themeBtn) themeBtn.textContent = "☀️";
+            if (themeBtnMobile && themeBtnMobile.querySelector('.btn-icon')) {
+                themeBtnMobile.querySelector('.btn-icon').textContent = "☀️";
+            }
         } else {
             document.body.classList.remove("dark");
-            themeBtn.textContent = "🌙";
-            themeBtn.dataset.tooltip = "Mode nuit";
+            if (themeBtn) themeBtn.textContent = "🌙";
+            if (themeBtnMobile && themeBtnMobile.querySelector('.btn-icon')) {
+                themeBtnMobile.querySelector('.btn-icon').textContent = "🌙";
+            }
         }
     }
 
@@ -25,7 +30,8 @@ const Theme = (() => {
 
     function init() {
         applyTheme();
-        themeBtn.addEventListener("click", toggleTheme);
+        if (themeBtn) themeBtn.addEventListener("click", toggleTheme);
+        if (themeBtnMobile) themeBtnMobile.addEventListener("click", toggleTheme);
     }
 
     return {
