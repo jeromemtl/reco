@@ -58,24 +58,20 @@ const Auth = (() => {
             AppState.currentTab = current;
             
             console.log('✅ Données chargées:', order.length, 'onglets');
+            console.log('📋 AppState.tabOrder:', AppState.tabOrder);
             
-            // Attendre que Tabs soit prêt et afficher
-            const displayTabs = () => {
-                if (window.Tabs && typeof window.Tabs.renderTabs === 'function') {
-                    console.log('🎨 Affichage des onglets...');
-                    window.Tabs.renderTabs();
-                    if (current) {
-                        window.Tabs.switchTab(current);
-                    } else if (order.length > 0) {
-                        window.Tabs.switchTab(order[0]);
-                    }
-                } else {
-                    console.log('⏳ Tabs pas encore prêt, nouvel essai...');
-                    setTimeout(displayTabs, 100);
+            // AFFICHER DIRECTEMENT LES ONGLETS
+            if (window.Tabs && window.Tabs.renderTabs) {
+                console.log('🎨 Appel direct de renderTabs()');
+                window.Tabs.renderTabs();
+                if (current) {
+                    window.Tabs.switchTab(current);
+                } else if (order.length > 0) {
+                    window.Tabs.switchTab(order[0]);
                 }
-            };
-            
-            displayTabs();
+            } else {
+                console.error('❌ Tabs n\'est pas disponible !');
+            }
             
         } catch (error) {
             console.error('❌ Erreur chargement Firestore:', error);
