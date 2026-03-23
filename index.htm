@@ -11,9 +11,58 @@
 <body>
 
 <div class="header">
-    <h2>Reco</h2>
+    <div class="header-left">
+        <div class="hamburger-menu" id="hamburgerMenu">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <h2>Reco</h2>
+    </div>
 
-    <div class="toolbar" style="flex-wrap: wrap; justify-content: flex-end; gap: 5px;">
+    <!-- Menu mobile overlay -->
+    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+    
+    <!-- Menu latéral mobile -->
+    <nav class="mobile-nav" id="mobileNav">
+        <div class="mobile-nav-header">
+            <h3>Menu</h3>
+            <button class="close-menu" id="closeMenuBtn">✖</button>
+        </div>
+        <div class="mobile-nav-content">
+            <button id="cameraScanBtnMobile" class="mobile-nav-btn" data-tooltip="Scanner avec la caméra">
+                <span class="btn-icon">📷</span>
+                <span class="btn-text">Scanner caméra</span>
+            </button>
+            <button id="saveBtnTopMobile" class="mobile-nav-btn" data-tooltip="Exporter l'onglet actuel">
+                <span class="btn-icon">📤</span>
+                <span class="btn-text">Exporter l'onglet</span>
+            </button>
+            <button id="saveAllBtnTopMobile" class="mobile-nav-btn" data-tooltip="Exporter tous les onglets">
+                <span class="btn-icon">📦</span>
+                <span class="btn-text">Exporter tous</span>
+            </button>
+            <button id="replaceTabsBtnMobile" class="mobile-nav-btn" data-tooltip="Remplacer tous les onglets">
+                <span class="btn-icon">🔄</span>
+                <span class="btn-text">Remplacer onglets</span>
+            </button>
+            <button id="resetBtnTopMobile" class="mobile-nav-btn" data-tooltip="Réinitialiser tous les onglets">
+                <span class="btn-icon">🗑️</span>
+                <span class="btn-text">Réinitialiser</span>
+            </button>
+            <button id="statsBtnMobile" class="mobile-nav-btn" data-tooltip="Statistiques">
+                <span class="btn-icon">📊</span>
+                <span class="btn-text">Statistiques</span>
+            </button>
+            <button id="themeBtnTopMobile" class="mobile-nav-btn" data-tooltip="Mode nuit">
+                <span class="btn-icon">🌙</span>
+                <span class="btn-text">Mode nuit</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Barre d'outils desktop -->
+    <div class="toolbar desktop-toolbar">
         <button id="cameraScanBtn" class="icon-btn" data-tooltip="Scanner avec la caméra">📷</button>
         <button id="saveBtnTop" class="icon-btn" data-tooltip="Exporter l'onglet actuel">📤</button>
         <button id="saveAllBtnTop" class="icon-btn" data-tooltip="Exporter tous les onglets">📦</button>
@@ -37,16 +86,22 @@ Vous pouvez :
 – scanner normalement : la touche Tab est automatiquement convertie en retour à la ligne (aucune configuration de la douchette nécessaire).
 "></textarea>
 
-<div id="lineCount">0 ligne</div>
-<div id="saveFeedback">💾 Sauvegardé</div>
-
-<select id="fontSizeSelect">
-    <option value="16">16 px</option>
-    <option value="24">24 px</option>
-    <option value="32">32 px</option>
-    <option value="48">48 px</option>
-    <option value="64">64 px</option>
-</select>
+<!-- Footer unique pour tous les appareils -->
+<footer class="app-footer">
+    <div class="footer-left">
+        <select id="fontSizeSelect">
+            <option value="16">16 px</option>
+            <option value="24">24 px</option>
+            <option value="32">32 px</option>
+            <option value="48">48 px</option>
+            <option value="64">64 px</option>
+        </select>
+    </div>
+    <div class="footer-right">
+        <div id="saveFeedback">💾 Sauvegardé</div>
+        <div id="lineCount">0 ligne</div>
+    </div>
+</footer>
 
 <div id="contextMenu">
     <div id="renameOption">✏️ Renommer</div>
@@ -87,6 +142,7 @@ Vous pouvez :
 <script src="js/ui.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/scanner-camera.js"></script>
+<script src="js/mobile-menu.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>

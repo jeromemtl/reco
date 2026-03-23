@@ -17,6 +17,10 @@
     --tab-bg-light: #eee;
     --tab-bg-dark: #444;
     --transition: 0.3s;
+    --menu-bg-light: #fff;
+    --menu-bg-dark: #2a2a2a;
+    --footer-bg-light: #f5f5f5;
+    --footer-bg-dark: #2a2a2a;
 }
 
 * {
@@ -33,11 +37,13 @@ body {
     transition: background var(--transition), color var(--transition);
     background: var(--bg-light);
     color: var(--text-light);
+    padding-bottom: 70px;
 }
 
 textarea {
     width: 100%;
-    height: 70vh;
+    height: calc(100vh - 200px);
+    min-height: 300px;
     font-size: 1.2rem;
     font-family: 'Courier New', Courier, monospace;
     padding: 10px;
@@ -45,6 +51,7 @@ textarea {
     border: 1px solid var(--border-light);
     border-radius: 4px;
     transition: background var(--transition), color var(--transition), border-color var(--transition);
+    resize: vertical;
 }
 
 /* --------------------------------------------------
@@ -61,7 +68,6 @@ body.dark textarea {
     border-color: var(--border-dark);
 }
 
-/* Éléments partagés mode sombre */
 body.dark .tab,
 body.dark #addTabBtn {
     background: var(--tab-bg-dark);
@@ -80,14 +86,282 @@ body.dark .modal-content {
     border-color: #666;
 }
 
-body.dark .icon-btn:hover::after,
 body.dark #statsOutput {
     background: #222;
+}
+
+body.dark .mobile-nav {
+    background: var(--menu-bg-dark);
+    border-right-color: #444;
+}
+
+body.dark .mobile-nav-btn:hover {
+    background: #3a3a3a;
+}
+
+body.dark .hamburger-menu span {
+    background: var(--text-dark);
+}
+
+body.dark .mobile-menu-overlay {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+body.dark .app-footer {
+    background: var(--footer-bg-dark);
+    border-top-color: #444;
+}
+
+/* --------------------------------------------------
+   FOOTER
+-------------------------------------------------- */
+.app-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: var(--footer-bg-light);
+    border-top: 1px solid var(--border-light);
+    z-index: 100;
+    transition: background var(--transition), border-color var(--transition);
+}
+
+.footer-left {
+    display: flex;
+    align-items: center;
+}
+
+.footer-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#fontSizeSelect {
+    border: 1px solid var(--border-light);
+    border-radius: 5px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    background: var(--bg-light);
+    color: var(--text-light);
+    transition: background var(--transition), color var(--transition), border-color var(--transition);
+}
+
+body.dark #fontSizeSelect {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+#saveFeedback {
+    font-size: 0.9rem;
+    color: var(--success);
+    transition: opacity 0.4s;
+    opacity: 0;
+}
+
+#saveFeedback.visible {
+    opacity: 1;
+}
+
+#lineCount {
+    font-size: 0.9rem;
+    opacity: 0.7;
+    color: var(--text-light);
+}
+
+body.dark #lineCount {
+    color: var(--text-dark);
+}
+
+/* --------------------------------------------------
+   EN-TÊTE ET MENU HAMBURGER
+-------------------------------------------------- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.hamburger-menu {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 24px;
+    cursor: pointer;
+    z-index: 1001;
+    position: relative;
+}
+
+.hamburger-menu span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background: var(--text-light);
+    border-radius: 3px;
+    transition: all var(--transition);
+}
+
+body.dark .hamburger-menu span {
+    background: var(--text-dark);
+}
+
+.hamburger-menu.active span:nth-child(1) {
+    transform: translateY(10px) rotate(45deg);
+}
+
+.hamburger-menu.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.active span:nth-child(3) {
+    transform: translateY(-10px) rotate(-45deg);
+}
+
+/* --------------------------------------------------
+   MENU LATÉRAL MOBILE
+-------------------------------------------------- */
+.mobile-nav {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100%;
+    background: var(--menu-bg-light);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+    transition: left var(--transition);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.mobile-nav.open {
+    left: 0;
+}
+
+.mobile-nav-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-nav-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+}
+
+.close-menu {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    color: var(--text-light);
+    transition: transform 0.2s;
+}
+
+.close-menu:hover {
+    transform: scale(1.1);
+}
+
+body.dark .close-menu {
+    color: var(--text-dark);
+}
+
+.mobile-nav-content {
+    flex: 1;
+    padding: 10px 0;
+}
+
+.mobile-nav-btn {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 100%;
+    padding: 15px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    text-align: left;
+    transition: background var(--transition);
+    color: var(--text-light);
+}
+
+body.dark .mobile-nav-btn {
+    color: var(--text-dark);
+}
+
+.mobile-nav-btn:hover {
+    background: #f0f0f0;
+}
+
+body.dark .mobile-nav-btn:hover {
+    background: #3a3a3a;
+}
+
+.mobile-nav-btn .btn-icon {
+    font-size: 1.5rem;
+    width: 32px;
+    text-align: center;
+}
+
+.mobile-nav-btn .btn-text {
+    flex: 1;
+}
+
+.mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    display: none;
+}
+
+.mobile-menu-overlay.active {
+    display: block;
+}
+
+/* --------------------------------------------------
+   BARRE D'OUTILS DESKTOP
+-------------------------------------------------- */
+.desktop-toolbar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 /* --------------------------------------------------
    ONGLETS
 -------------------------------------------------- */
+.tabs {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
 .tab {
     padding: 5px 12px;
     border: 1px solid var(--border-light);
@@ -120,62 +394,8 @@ body.dark #statsOutput {
     font-weight: bold;
 }
 
-/* --------------------------------------------------
-   LAYOUT PRINCIPAL
--------------------------------------------------- */
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.toolbar {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-}
-
-.tabs {
-    margin-top: 10px;
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-}
-
-/* --------------------------------------------------
-   ÉLÉMENTS FLOTTANTS (footer)
--------------------------------------------------- */
-#lineCount,
-#saveFeedback,
-#fontSizeSelect {
-    position: fixed;
-    bottom: 10px;
-    z-index: 100;
-}
-
-#lineCount {
-    right: 20px;
-    opacity: 0.7;
-}
-
-#saveFeedback {
-    right: 120px;
-    opacity: 0;
-    transition: opacity 0.4s;
-    font-size: 0.9rem;
-    color: var(--success);
-}
-
-#fontSizeSelect {
-    left: 20px;
-    border: 1px solid var(--border-light);
-    border-radius: 5px;
-    padding: 3px 6px;
-    cursor: pointer;
-    font-size: 1rem;
+body.dark #addTabBtn {
+    background: var(--tab-bg-dark);
 }
 
 /* --------------------------------------------------
@@ -293,11 +513,11 @@ body.dark #statsOutput {
     font-weight: 500;
 }
 
-/* Boutons modales */
 #replaceCancel {
     background: #ccc;
     color: #333;
 }
+
 #replaceCancel:hover {
     background: #b5b5b5;
 }
@@ -311,6 +531,7 @@ body.dark #statsOutput {
 #replaceConfirm {
     background: var(--primary);
 }
+
 #replaceConfirm:hover {
     background: var(--primary-dark);
 }
@@ -318,27 +539,32 @@ body.dark #statsOutput {
 #statsSave {
     background: var(--success);
 }
+
 #statsSave:hover {
     background: var(--success-dark);
 }
 
-/* Mode sombre pour les boutons */
 body.dark #replaceCancel {
     background: #555;
     color: var(--text-dark);
 }
+
 body.dark #replaceCancel:hover {
     background: #666;
 }
+
 body.dark #replaceConfirm {
     background: #1e5ad7;
 }
+
 body.dark #replaceConfirm:hover {
     background: #174bb5;
 }
+
 body.dark #statsSave {
     background: #2e7d32;
 }
+
 body.dark #statsSave:hover {
     background: #256628;
 }
@@ -386,52 +612,8 @@ body.dark #statsSave:hover {
 }
 
 /* --------------------------------------------------
-   MOBILE RESPONSIVE
--------------------------------------------------- */
-@media (max-width: 600px) {
-    .header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    
-    .toolbar {
-        width: 100%;
-        justify-content: center;
-    }
-    
-    .icon-btn {
-        font-size: 1.5rem;
-        padding: 5px;
-    }
-    
-    h2 {
-        margin: 5px 0;
-        font-size: 1.5rem;
-    }
-    
-    #fontSizeSelect {
-        font-size: 14px;
-        padding: 5px;
-    }
-    
-    #lineCount,
-    #saveFeedback,
-    #fontSizeSelect {
-        position: static;
-        margin: 5px;
-        display: inline-block;
-    }
-    
-    .modal-content {
-        width: 95%;
-        margin: 10px;
-    }
-}
-
-/* --------------------------------------------------
    SCANNER CAMÉRA - MODES CLAIR/SOMBRE
 -------------------------------------------------- */
-
 #scanner-overlay {
     position: fixed;
     top: 0;
@@ -600,4 +782,113 @@ body.dark .last-code-display {
 
 .flash-button:hover {
     background: var(--primary-dark);
+}
+
+/* --------------------------------------------------
+   RESPONSIVE MOBILE
+-------------------------------------------------- */
+@media (max-width: 768px) {
+    body {
+        margin: 10px;
+        padding-bottom: 60px;
+    }
+    
+    textarea {
+        height: calc(100vh - 160px);
+        min-height: 200px;
+        font-size: 16px;
+    }
+    
+    .hamburger-menu {
+        display: flex;
+    }
+    
+    .desktop-toolbar {
+        display: none;
+    }
+    
+    .header {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+    
+    .header-left {
+        flex: 1;
+    }
+    
+    h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+    
+    .tabs {
+        gap: 5px;
+    }
+    
+    .tab {
+        font-size: 0.9rem;
+        padding: 5px 10px;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 10px;
+    }
+    
+    .app-footer {
+        padding: 8px 12px;
+    }
+    
+    .footer-right {
+        gap: 10px;
+    }
+    
+    #fontSizeSelect {
+        padding: 5px 8px;
+        font-size: 0.85rem;
+    }
+    
+    #saveFeedback, #lineCount {
+        font-size: 0.8rem;
+    }
+}
+
+/* Pour les très petits écrans */
+@media (max-width: 480px) {
+    .mobile-nav {
+        width: 85%;
+        left: -85%;
+    }
+    
+    .mobile-nav-btn {
+        padding: 12px 15px;
+    }
+    
+    .mobile-nav-btn .btn-icon {
+        font-size: 1.3rem;
+    }
+    
+    .tab {
+        font-size: 0.8rem;
+        padding: 4px 8px;
+    }
+    
+    .app-footer {
+        padding: 6px 10px;
+    }
+    
+    .footer-right {
+        gap: 8px;
+    }
+}
+
+/* Pour les tablettes en mode portrait */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .desktop-toolbar {
+        gap: 5px;
+    }
+    
+    .icon-btn {
+        font-size: 1.8rem;
+    }
 }

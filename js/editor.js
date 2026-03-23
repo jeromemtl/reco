@@ -8,8 +8,8 @@ const Editor = (() => {
 
     /* -------------------- FEEDBACK VISUEL -------------------- */
     function showSaveFeedback() {
-        saveFeedback.style.opacity = "1";
-        setTimeout(() => saveFeedback.style.opacity = "0", 600);
+        saveFeedback.classList.add("visible");
+        setTimeout(() => saveFeedback.classList.remove("visible"), 600);
     }
 
     /* -------------------- COMPTEUR DE LIGNES -------------------- */
