@@ -121,6 +121,7 @@
         console.error('❌ Editor non trouvé');
     }
     
+    // Initialiser le scanner IMMÉDIATEMENT (pas après connexion)
     if (typeof CameraScanner !== 'undefined') {
         debugLog("📷 Initialisation du CameraScanner");
         CameraScanner.init();
@@ -129,23 +130,6 @@
     }
 
     AppState.isRestoring = false;
-    
-    // Mettre à jour l'indicateur de mode dans le footer
-    setTimeout(() => {
-        const mode = window.Auth ? window.Auth.getCurrentMode() : null;
-        const modeIcon = document.getElementById('modeIcon');
-        const modeText = document.getElementById('modeText');
-        
-        if (modeIcon && modeText) {
-            if (mode === 'solo') {
-                modeIcon.textContent = '👤';
-                modeText.textContent = 'Solo';
-            } else {
-                modeIcon.textContent = '👥';
-                modeText.textContent = 'Collaboratif';
-            }
-        }
-    }, 500);
     
     debugLog("✅ Application prête en attente de connexion");
 })();

@@ -822,7 +822,7 @@ textarea {
     width: 280px;
     height: 100%;
     background: var(--menu-bg-light);
-    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
     z-index: 1002;
     transition: left var(--transition);
     display: flex;
@@ -845,6 +845,7 @@ textarea {
 .mobile-nav-header h3 {
     margin: 0;
     font-size: 1.2rem;
+    color: var(--text-light);
 }
 
 .close-menu {
@@ -904,7 +905,7 @@ textarea {
 .mobile-menu-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.5);
     z-index: 1001;
     display: none;
 }
@@ -947,28 +948,6 @@ body.dark .modal-content {
 
 body.dark #statsOutput {
     background: #222;
-}
-
-body.dark .mobile-nav {
-    background: var(--menu-bg-dark);
-    border-right-color: #444;
-}
-
-body.dark .mobile-nav-btn:hover {
-    background: #3a3a3a;
-}
-
-body.dark .hamburger-menu span {
-    background: var(--text-dark);
-}
-
-body.dark .mobile-menu-overlay {
-    background: rgba(0,0,0,0.8);
-}
-
-body.dark .app-footer {
-    background: var(--footer-bg-dark);
-    border-top-color: #444;
 }
 
 body.dark .login-card {
@@ -1078,6 +1057,74 @@ body.dark #statsSave {
 
 body.dark #statsSave:hover {
     background: #256628;
+}
+
+body.dark .app-footer {
+    background: var(--footer-bg-dark);
+    border-top-color: #444;
+}
+
+body.dark #fontSizeSelect {
+    background: var(--bg-dark);
+    color: var(--text-dark);
+    border-color: var(--border-dark);
+}
+
+body.dark #saveFeedback {
+    color: var(--success);
+}
+
+body.dark #lineCount {
+    color: var(--text-dark);
+}
+
+body.dark .status-divider {
+    background: var(--border-dark);
+}
+
+body.dark .footer-status {
+    color: var(--text-dark);
+}
+
+body.dark .footer-link {
+    color: var(--text-dark);
+}
+
+/* --------------------------------------------------
+   MODE NUIT - MENU MOBILE
+-------------------------------------------------- */
+body.dark .mobile-nav {
+    background: var(--menu-bg-dark);
+    border-right-color: #444;
+}
+
+body.dark .mobile-nav-header {
+    border-bottom-color: #444;
+}
+
+body.dark .mobile-nav-header h3 {
+    color: var(--text-dark);
+}
+
+body.dark .close-menu {
+    color: var(--text-dark);
+}
+
+body.dark .close-menu:hover {
+    color: #fff;
+}
+
+body.dark .mobile-nav-btn {
+    color: var(--text-dark);
+}
+
+body.dark .mobile-nav-btn:hover {
+    background: #3a3a3a;
+}
+
+body.dark .logout-btn {
+    border-top-color: #444;
+    color: var(--danger);
 }
 
 /* --------------------------------------------------

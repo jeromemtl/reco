@@ -3,18 +3,29 @@
 const CameraScanner = (() => {
     let html5QrcodeScanner = null;
     let isScanning = false;
+    let isStarting = false;
     let scanTimeout = null;
     let audioContext = null;
     let hasFlash = false;
+    let debugCounter = 0;
+    
+    function debug(msg, data) {
+        const time = new Date().toLocaleTimeString();
+        const counter = ++debugCounter;
+        console.log(`[${time}] [${counter}] 🔍 ${msg}`, data !== undefined ? data : '');
+    }
     
     async function checkFlashSupport() {
+        debug('checkFlashSupport - début');
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                debug('checkFlashSupport - mediaDevices non disponible');
                 return false;
             }
             
             const devices = await navigator.mediaDevices.enumerateDevices();
             const hasCamera = devices.some(device => device.kind === 'videoinput');
+            debug('checkFlashSupport - caméras trouvées:', hasCamera);
             if (!hasCamera) return false;
             
             const stream = await navigator.mediaDevices.getUserMedia({ 
@@ -30,8 +41,11 @@ const CameraScanner = (() => {
             const capabilities = track.getCapabilities ? track.getCapabilities() : {};
             stream.getTracks().forEach(t => t.stop());
             
-            return !!(capabilities && capabilities.torch);
+            const hasTorch = !!(capabilities && capabilities.torch);
+            debug('checkFlashSupport - flash supporté:', hasTorch);
+            return hasTorch;
         } catch (error) {
+            debug('checkFlashSupport - erreur:', error.message);
             return false;
         }
     }
@@ -76,13 +90,18 @@ const CameraScanner = (() => {
     }
     
     async function createScannerUI() {
+        debug('createScannerUI - création de l\'interface');
         const oldContainer = document.getElementById("camera-scanner-container");
-        if (oldContainer) oldContainer.remove();
+        if (oldContainer) {
+            debug('createScannerUI - suppression ancien conteneur');
+            oldContainer.remove();
+        }
         
         const currentTabName = AppState.currentTab || "Aucun";
         const lineCount = getCurrentTabLineCount();
         
         hasFlash = await checkFlashSupport();
+        debug('createScannerUI - flash supporté:', hasFlash);
         
         const container = document.createElement("div");
         container.id = "camera-scanner-container";
@@ -133,11 +152,22 @@ const CameraScanner = (() => {
         `;
         
         document.body.appendChild(container);
+        debug('createScannerUI - interface ajoutée au DOM');
         
-        document.getElementById("close-scanner").addEventListener("click", stopScanner);
+        const closeBtn = document.getElementById("close-scanner");
+        if (closeBtn) {
+            debug('createScannerUI - bouton fermer trouvé');
+            closeBtn.addEventListener("click", (e) => {
+                debug('createScannerUI - clic sur bouton fermer');
+                stopScanner();
+            });
+        } else {
+            debug('createScannerUI - ATTENTION: bouton fermer NON trouvé');
+        }
         
         if (hasFlash) {
-            document.getElementById("toggle-flash").addEventListener("click", toggleFlash);
+            const flashBtn = document.getElementById("toggle-flash");
+            if (flashBtn) flashBtn.addEventListener("click", toggleFlash);
         }
         
         return container;
@@ -151,35 +181,46 @@ const CameraScanner = (() => {
     }
     
     async function startScanner() {
-        if (isScanning) return;
+        debug('startScanner - appelée');
         
-        console.log('🔍 Scanner - démarrage');
+        if (isScanning) {
+            debug('startScanner - déjà en scan (isScanning=true), annulation');
+            return;
+        }
         
-        // Vérifier que AppState est prêt
+        if (isStarting) {
+            debug('startScanner - déjà en démarrage (isStarting=true), annulation');
+            return;
+        }
+        
+        isStarting = true;
+        debug('startScanner - début du processus');
+        
         if (!AppState || !AppState.currentTab) {
-            console.log('⏳ Scanner - AppState non prêt, attente...');
-            setTimeout(() => startScanner(), 500);
+            debug('startScanner - AppState non prêt, réessai dans 500ms');
+            setTimeout(() => {
+                isStarting = false;
+                startScanner();
+            }, 500);
             return;
         }
+        debug('startScanner - AppState prêt, currentTab:', AppState.currentTab);
         
-        // Vérifier le mode
-        const mode = window.Auth ? window.Auth.getCurrentMode() : null;
-        console.log('🔍 Scanner - mode actuel:', mode);
-        
-        // Vérifier la disponibilité de la caméra
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("❌ Votre navigateur ne supporte pas l'accès à la caméra.\n\nUtilisez Chrome, Safari ou Firefox sur mobile.");
+            debug('startScanner - mediaDevices non disponible');
+            alert("❌ Votre navigateur ne supporte pas l'accès à la caméra.");
+            isStarting = false;
             return;
         }
+        debug('startScanner - mediaDevices disponible');
         
-        // Tester l'accès caméra
         try {
-            console.log('🔍 Scanner - test accès caméra...');
+            debug('startScanner - test accès caméra...');
             const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
             testStream.getTracks().forEach(track => track.stop());
-            console.log('✅ Scanner - accès caméra OK');
+            debug('startScanner - accès caméra OK');
         } catch (err) {
-            console.error('❌ Scanner - erreur accès caméra:', err);
+            debug('startScanner - ERREUR accès caméra:', err.name + ' - ' + err.message);
             if (err.name === 'NotAllowedError') {
                 alert("❌ Accès à la caméra refusé.\n\nVeuillez autoriser l'accès dans les paramètres de votre navigateur.");
             } else if (err.name === 'NotFoundError') {
@@ -187,19 +228,21 @@ const CameraScanner = (() => {
             } else {
                 alert(`❌ Erreur caméra: ${err.message}`);
             }
+            isStarting = false;
             return;
         }
         
+        debug('startScanner - création de l\'interface...');
         await createScannerUI();
-        
-        // Petit délai pour que le DOM soit prêt
         await new Promise(resolve => setTimeout(resolve, 100));
+        debug('startScanner - interface créée');
         
         const config = {
-            fps: 10,
+            fps: 15,
             qrbox: function(viewfinderWidth, viewfinderHeight) {
-                const size = Math.min(viewfinderWidth, viewfinderHeight) * 0.6;
-                return { width: size, height: size };
+                const width = Math.min(300, viewfinderWidth * 0.8);
+                const height = Math.min(150, viewfinderHeight * 0.4);
+                return { width: Math.round(width), height: Math.round(height) };
             },
             rememberLastUsedCamera: true,
             showTorchButtonIfSupported: false,
@@ -219,7 +262,7 @@ const CameraScanner = (() => {
             if (scanTimeout) return;
             
             let code = decodedText.trim();
-            console.log('📷 Scanner - code détecté:', code);
+            debug('onScanSuccess - code détecté:', code);
             const added = addCodeToTextarea(code);
             
             if (added) {
@@ -252,21 +295,21 @@ const CameraScanner = (() => {
         };
         
         html5QrcodeScanner = new Html5Qrcode("qr-reader");
+        debug('startScanner - html5QrcodeScanner créé');
         
-        // Essayer différentes configurations de caméra
         const cameraConfigs = [
-            { facingMode: { exact: "environment" } },  // caméra arrière exacte
-            { facingMode: "environment" },              // caméra arrière
-            { facingMode: "user" },                    // caméra avant
-            { deviceId: { exact: null } }               // caméra par défaut
+            { facingMode: { exact: "environment" } },
+            { facingMode: "environment" },
+            { facingMode: "user" }
         ];
         
         let started = false;
         
-        for (const cameraConfig of cameraConfigs) {
+        for (let i = 0; i < cameraConfigs.length; i++) {
+            const cameraConfig = cameraConfigs[i];
             if (started) break;
             try {
-                console.log('🔍 Scanner - essai config:', JSON.stringify(cameraConfig));
+                debug(`startScanner - essai config ${i+1}/${cameraConfigs.length}:`, JSON.stringify(cameraConfig));
                 await html5QrcodeScanner.start(
                     cameraConfig,
                     config,
@@ -275,38 +318,34 @@ const CameraScanner = (() => {
                 );
                 started = true;
                 isScanning = true;
-                console.log('✅ Scanner - démarré avec succès');
+                debug(`startScanner - ✅ DÉMARRÉ avec succès (config ${i+1})`);
                 const statusEl = document.getElementById("scanner-status");
                 if (statusEl) {
                     statusEl.textContent = "Scannez un code-barres...";
                     statusEl.style.color = "";
                 }
             } catch (err) {
-                console.log('⚠️ Scanner - échec config:', err.message);
+                debug(`startScanner - échec config ${i+1}:`, err.message);
             }
         }
         
         if (!started) {
-            console.error('❌ Scanner - impossible de démarrer');
+            debug('startScanner - ❌ ÉCHEC TOTAL: aucune configuration n\'a fonctionné');
             const statusEl = document.getElementById("scanner-status");
             if (statusEl) {
                 statusEl.innerHTML = "❌ Impossible d'accéder à la caméra<br><small>Vérifiez les permissions</small>";
                 statusEl.style.color = "#f44336";
             }
+            document.getElementById("camera-scanner-container")?.remove();
+            html5QrcodeScanner = null;
         }
+        
+        isStarting = false;
+        debug('startScanner - fin du processus, isScanning=' + isScanning);
     }
     
     function stopScanner() {
-        console.log('🔍 Scanner - arrêt');
-        
-        if (AppState.currentTab) {
-            const note = document.getElementById("note");
-            if (note) {
-                AppState.files[AppState.currentTab] = note.value;
-                Storage.saveState();
-                if (window.Tabs) window.Tabs.updateTabIndicators();
-            }
-        }
+        debug('stopScanner - appelée, isScanning=' + isScanning + ', html5QrcodeScanner=' + !!html5QrcodeScanner);
         
         if (scanTimeout) {
             clearTimeout(scanTimeout);
@@ -314,7 +353,9 @@ const CameraScanner = (() => {
         }
         
         if (html5QrcodeScanner && isScanning) {
+            debug('stopScanner - arrêt en cours...');
             html5QrcodeScanner.stop().then(() => {
+                debug('stopScanner - arrêt réussi');
                 html5QrcodeScanner.clear();
                 document.getElementById("camera-scanner-container")?.remove();
                 html5QrcodeScanner = null;
@@ -332,13 +373,17 @@ const CameraScanner = (() => {
                     }
                 }, 100);
                 
-            }).catch(() => {
+            }).catch((err) => {
+                debug('stopScanner - erreur arrêt:', err.message);
                 document.getElementById("camera-scanner-container")?.remove();
                 isScanning = false;
+                html5QrcodeScanner = null;
             });
         } else {
+            debug('stopScanner - rien à arrêter, nettoyage');
             document.getElementById("camera-scanner-container")?.remove();
             isScanning = false;
+            html5QrcodeScanner = null;
             
             setTimeout(() => {
                 if (typeof Editor !== 'undefined' && Editor.forceCloudSave) {
@@ -355,6 +400,7 @@ const CameraScanner = (() => {
     }
     
     function toggleFlash() {
+        debug('toggleFlash - appelée');
         if (!html5QrcodeScanner || !isScanning || !hasFlash) return;
         
         html5QrcodeScanner.getRunningTrackCameraCapabilities().then(capabilities => {
@@ -366,6 +412,7 @@ const CameraScanner = (() => {
                 if (flashBtn) {
                     flashBtn.innerHTML = torchOn ? "🔦 Flash désactivé" : "🔦 Flash";
                 }
+                debug('toggleFlash - flash:', torchOn ? 'allumé' : 'éteint');
             }
         }).catch(() => {});
     }
@@ -413,22 +460,36 @@ const CameraScanner = (() => {
     }
     
     function init() {
+        debug('init - initialisation du scanner');
         const cameraBtn = document.getElementById("cameraScanBtn");
         const cameraBtnMobile = document.getElementById("cameraScanBtnMobile");
         
-        console.log('🔍 Scanner init - boutons trouvés:', {
+        debug('init - boutons trouvés:', {
             desktop: !!cameraBtn,
             mobile: !!cameraBtnMobile
         });
         
         if (cameraBtn) {
-            cameraBtn.addEventListener("click", startScanner);
-        }
-        if (cameraBtnMobile) {
-            cameraBtnMobile.addEventListener("click", startScanner);
+            const newBtn = cameraBtn.cloneNode(true);
+            cameraBtn.parentNode.replaceChild(newBtn, cameraBtn);
+            newBtn.addEventListener("click", (e) => {
+                debug('init - clic sur bouton desktop');
+                startScanner();
+            });
+            debug('init - bouton desktop attaché');
         }
         
-        console.log('📷 Scanner initialisé');
+        if (cameraBtnMobile) {
+            const newBtnMobile = cameraBtnMobile.cloneNode(true);
+            cameraBtnMobile.parentNode.replaceChild(newBtnMobile, cameraBtnMobile);
+            newBtnMobile.addEventListener("click", (e) => {
+                debug('init - clic sur bouton mobile (hamburger)');
+                startScanner();
+            });
+            debug('init - bouton mobile attaché');
+        }
+        
+        debug('📷 Scanner initialisé - prêt');
     }
     
     return {
