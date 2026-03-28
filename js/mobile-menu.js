@@ -3,49 +3,22 @@
 const MobileMenu = (() => {
     let isOpen = false;
     
-    // Éléments DOM
     const hamburger = document.getElementById('hamburgerMenu');
     const mobileNav = document.getElementById('mobileNav');
     const overlay = document.getElementById('mobileMenuOverlay');
     const closeBtn = document.getElementById('closeMenuBtn');
     
-    // Boutons du menu mobile
-    const mobileButtons = {
-        cameraScan: document.getElementById('cameraScanBtnMobile'),
-        save: document.getElementById('saveBtnTopMobile'),
-        saveAll: document.getElementById('saveAllBtnTopMobile'),
-        replaceTabs: document.getElementById('replaceTabsBtnMobile'),
-        reset: document.getElementById('resetBtnTopMobile'),
-        stats: document.getElementById('statsBtnMobile'),
-        theme: document.getElementById('themeBtnTopMobile')
-    };
-    
-    // Boutons desktop correspondants
-    const desktopButtons = {
-        cameraScan: document.getElementById('cameraScanBtn'),
-        save: document.getElementById('saveBtnTop'),
-        saveAll: document.getElementById('saveAllBtnTop'),
-        replaceTabs: document.getElementById('replaceTabsBtn'),
-        reset: document.getElementById('resetBtnTop'),
-        stats: document.getElementById('statsBtn'),
-        theme: document.getElementById('themeBtnTop')
-    };
-    
-    // Fonction pour ouvrir le menu
     function openMenu() {
         if (!mobileNav || !overlay || !hamburger) return;
-        
         mobileNav.classList.add('open');
         overlay.classList.add('active');
         hamburger.classList.add('active');
-        document.body.style.overflow = 'hidden'; // Empêche le scroll arrière
+        document.body.style.overflow = 'hidden';
         isOpen = true;
     }
     
-    // Fonction pour fermer le menu
     function closeMenu() {
         if (!mobileNav || !overlay || !hamburger) return;
-        
         mobileNav.classList.remove('open');
         overlay.classList.remove('active');
         hamburger.classList.remove('active');
@@ -53,162 +26,171 @@ const MobileMenu = (() => {
         isOpen = false;
     }
     
-    // Toggle du menu
     function toggleMenu() {
-        if (isOpen) {
-            closeMenu();
-        } else {
-            openMenu();
-        }
+        if (isOpen) closeMenu();
+        else openMenu();
     }
     
-    // Liaison des événements des boutons mobiles avec les boutons desktop
     function bindMobileButtons() {
         // Scanner caméra
-        if (mobileButtons.cameraScan && desktopButtons.cameraScan) {
-            mobileButtons.cameraScan.addEventListener('click', (e) => {
+        const cameraBtnMobile = document.getElementById('cameraScanBtnMobile');
+        const cameraBtnDesktop = document.getElementById('cameraScanBtn');
+        if (cameraBtnMobile && cameraBtnDesktop) {
+            cameraBtnMobile.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.cameraScan.click();
+                cameraBtnDesktop.click();
                 closeMenu();
             });
         }
         
         // Exporter l'onglet
-        if (mobileButtons.save && desktopButtons.save) {
-            mobileButtons.save.addEventListener('click', (e) => {
+        const saveBtnMobile = document.getElementById('saveBtnTopMobile');
+        const saveBtnDesktop = document.getElementById('saveBtnTop');
+        if (saveBtnMobile && saveBtnDesktop) {
+            saveBtnMobile.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.save.click();
+                saveBtnDesktop.click();
                 closeMenu();
             });
         }
         
-        // Exporter tous les onglets
-        if (mobileButtons.saveAll && desktopButtons.saveAll) {
-            mobileButtons.saveAll.addEventListener('click', (e) => {
+        // Exporter tous
+        const saveAllBtnMobile = document.getElementById('saveAllBtnTopMobile');
+        const saveAllBtnDesktop = document.getElementById('saveAllBtnTop');
+        if (saveAllBtnMobile && saveAllBtnDesktop) {
+            saveAllBtnMobile.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.saveAll.click();
+                saveAllBtnDesktop.click();
                 closeMenu();
             });
         }
         
-        // Remplacer les onglets
-        if (mobileButtons.replaceTabs && desktopButtons.replaceTabs) {
-            mobileButtons.replaceTabs.addEventListener('click', (e) => {
+        // Remplacer onglets
+        const replaceBtnMobile = document.getElementById('replaceTabsBtnMobile');
+        const replaceBtnDesktop = document.getElementById('replaceTabsBtn');
+        if (replaceBtnMobile && replaceBtnDesktop) {
+            replaceBtnMobile.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.replaceTabs.click();
+                replaceBtnDesktop.click();
                 closeMenu();
             });
         }
         
         // Réinitialiser
-        if (mobileButtons.reset && desktopButtons.reset) {
-            mobileButtons.reset.addEventListener('click', (e) => {
+        const resetBtnMobile = document.getElementById('resetBtnTopMobile');
+        const resetBtnDesktop = document.getElementById('resetBtnTop');
+        if (resetBtnMobile && resetBtnDesktop) {
+            resetBtnMobile.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.reset.click();
+                resetBtnDesktop.click();
                 closeMenu();
             });
         }
         
         // Statistiques
-        if (mobileButtons.stats && desktopButtons.stats) {
-            mobileButtons.stats.addEventListener('click', (e) => {
+        const statsBtnMobile = document.getElementById('statsBtnMobile');
+        const statsBtnDesktop = document.getElementById('statsBtn');
+        if (statsBtnMobile && statsBtnDesktop) {
+            statsBtnMobile.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.stats.click();
+                statsBtnDesktop.click();
                 closeMenu();
             });
         }
         
-        // Thème
-        if (mobileButtons.theme && desktopButtons.theme) {
-            mobileButtons.theme.addEventListener('click', (e) => {
+        // Thème (gestion spéciale avec remplacement d'événement)
+        const themeBtnMobile = document.getElementById('themeBtnTopMobile');
+        const themeBtnDesktop = document.getElementById('themeBtnTop');
+        if (themeBtnMobile && themeBtnDesktop) {
+            // Remplacer l'élément pour supprimer tous les anciens événements
+            const newThemeBtn = themeBtnMobile.cloneNode(true);
+            themeBtnMobile.parentNode.replaceChild(newThemeBtn, themeBtnMobile);
+            
+            newThemeBtn.addEventListener('click', (e) => {
                 e.preventDefault();
-                desktopButtons.theme.click();
+                e.stopPropagation();
+                themeBtnDesktop.click();
+                
+                // Mettre à jour l'icône du menu mobile après changement de thème
+                setTimeout(() => {
+                    const isDark = document.body.classList.contains('dark');
+                    const iconSpan = newThemeBtn.querySelector('.btn-icon');
+                    const textSpan = newThemeBtn.querySelector('.btn-text');
+                    if (iconSpan) {
+                        iconSpan.textContent = isDark ? '☀️' : '🌙';
+                    }
+                    if (textSpan && !textSpan.textContent.includes('Mode')) {
+                        textSpan.textContent = isDark ? 'Mode clair' : 'Mode nuit';
+                    }
+                    closeMenu();
+                }, 100);
+            });
+            
+            // Mettre à jour la référence
+            const mobileNavContent = document.querySelector('.mobile-nav-content');
+            if (mobileNavContent) {
+                const updatedBtn = document.getElementById('themeBtnTopMobile');
+                if (updatedBtn) {
+                    // Remplacer dans l'objet si nécessaire
+                }
+            }
+        }
+        
+        // Déconnexion
+        const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+        const logoutBtnDesktop = document.getElementById('logoutBtn');
+        if (logoutBtnMobile && logoutBtnDesktop) {
+            logoutBtnMobile.addEventListener('click', (e) => {
+                e.preventDefault();
+                logoutBtnDesktop.click();
                 closeMenu();
             });
         }
     }
     
-    // Fermer le menu avec la touche Échap
     function handleEscapeKey(e) {
-        if (e.key === 'Escape' && isOpen) {
-            closeMenu();
-        }
+        if (e.key === 'Escape' && isOpen) closeMenu();
     }
     
-    // Mettre à jour l'icône du thème dans le menu mobile
     function updateThemeIcon() {
-        if (!mobileButtons.theme) return;
-        
+        const themeBtnMobile = document.getElementById('themeBtnTopMobile');
+        if (!themeBtnMobile) return;
         const isDark = document.body.classList.contains('dark');
-        const iconSpan = mobileButtons.theme.querySelector('.btn-icon');
-        const textSpan = mobileButtons.theme.querySelector('.btn-text');
-        
-        if (iconSpan) {
-            iconSpan.textContent = isDark ? '☀️' : '🌙';
-        }
+        const iconSpan = themeBtnMobile.querySelector('.btn-icon');
+        const textSpan = themeBtnMobile.querySelector('.btn-text');
+        if (iconSpan) iconSpan.textContent = isDark ? '☀️' : '🌙';
         if (textSpan && !textSpan.textContent.includes('Mode')) {
             textSpan.textContent = isDark ? 'Mode clair' : 'Mode nuit';
         }
     }
     
-    // Observer les changements de thème pour mettre à jour l'icône
     function observeThemeChanges() {
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.attributeName === 'class') {
-                    updateThemeIcon();
-                }
-            });
-        });
-        
+        const observer = new MutationObserver(() => updateThemeIcon());
         observer.observe(document.body, { attributes: true });
         updateThemeIcon();
     }
     
-    // Vérifier si l'appareil est mobile
-    function isMobileDevice() {
-        return window.innerWidth <= 768;
-    }
-    
-    // Réinitialiser l'état du menu lors du redimensionnement
     function handleResize() {
-        if (!isMobileDevice() && isOpen) {
-            // Si on passe en mode desktop avec le menu ouvert, on le ferme
-            closeMenu();
-        }
+        if (window.innerWidth > 768 && isOpen) closeMenu();
     }
     
-    // Initialisation
     function init() {
         if (!hamburger || !mobileNav || !overlay) {
             console.warn('⚠️ Éléments du menu mobile non trouvés');
             return;
         }
         
-        // Événements
         hamburger.addEventListener('click', toggleMenu);
-        
-        if (closeBtn) {
-            closeBtn.addEventListener('click', closeMenu);
-        }
-        
-        if (overlay) {
-            overlay.addEventListener('click', closeMenu);
-        }
-        
+        if (closeBtn) closeBtn.addEventListener('click', closeMenu);
+        if (overlay) overlay.addEventListener('click', closeMenu);
         document.addEventListener('keydown', handleEscapeKey);
         window.addEventListener('resize', handleResize);
-        
-        // Liaison des boutons
         bindMobileButtons();
-        
-        // Observer les changements de thème
         observeThemeChanges();
         
-        console.log('📱 Menu mobile initialisé');
+        debugLog('📱 Menu mobile initialisé');
     }
     
-    // Exposer les méthodes utiles
     return {
         init,
         open: openMenu,
@@ -218,11 +200,8 @@ const MobileMenu = (() => {
     };
 })();
 
-// Initialisation automatique quand le DOM est prêt
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        MobileMenu.init();
-    });
+    document.addEventListener('DOMContentLoaded', () => MobileMenu.init());
 } else {
     MobileMenu.init();
 }

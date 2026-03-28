@@ -1,17 +1,17 @@
 /* -------------------- APP INIT -------------------- */
 
 (function initApp() {
-    console.log("🚀 Démarrage de l'application...");
+    debugLog("🚀 Démarrage de l'application...");
     
     const saveBtnTop = document.getElementById("saveBtnTop");
     const saveAllBtnTop = document.getElementById("saveAllBtnTop");
     const resetBtnTop = document.getElementById("resetBtnTop");
     const note = document.getElementById("note");
-
-    // Charger l'état sauvegardé
-    Storage.loadState();
-
-    // Fonctions d'export avec confirmation
+    
+    // Variable pour éviter les sauvegardes inutiles
+    let lastSavedContent = '';
+    let lastSavedTab = null;
+    
     const saveFile = () => {
         if (!AppState.currentTab) {
             alert("Aucun onglet sélectionné");
@@ -54,33 +54,27 @@
         }
     };
 
-    // Raccourcis clavier
     const handleGlobalKeyDown = (e) => {
-        // Ctrl+S pour sauvegarder
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
             saveFile();
         }
         
-        // Ctrl+Shift+S pour tout sauvegarder
         if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'S') {
             e.preventDefault();
             saveAllTabs();
         }
         
-        // Échap pour fermer les modales et le scanner
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal').forEach(modal => {
                 modal.style.display = 'none';
             });
-            // Fermer aussi le scanner si ouvert
             if (typeof CameraScanner !== 'undefined' && CameraScanner.isScanning) {
                 CameraScanner.stopScanner();
             }
         }
     };
 
-    // Sauvegarde avant fermeture
     window.addEventListener("beforeunload", () => {
         if (AppState.currentTab !== null) {
             AppState.files[AppState.currentTab] = note.value;
@@ -88,48 +82,70 @@
         }
     });
 
-    // Sauvegarde périodique (toutes les 30s)
+    // Sauvegarde périodique avec vérification de changement
     setInterval(() => {
         if (AppState.currentTab !== null && !AppState.isRestoring) {
-            AppState.files[AppState.currentTab] = note.value;
-            Storage.saveState();
+            const currentContent = note.value;
+            
+            if (currentContent.trim() !== lastSavedContent.trim() || AppState.currentTab !== lastSavedTab) {
+                lastSavedContent = currentContent;
+                lastSavedTab = AppState.currentTab;
+                AppState.files[AppState.currentTab] = currentContent;
+                Storage.saveState();
+            }
         }
     }, 30000);
 
-    // Détection mobile
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     if (isMobile) {
         document.body.classList.add('mobile-device');
         if (!localStorage.getItem('textareaFontSize')) {
             note.style.fontSize = '24px';
-            document.getElementById('fontSizeSelect').value = '24';
+            const fontSizeSelect = document.getElementById('fontSizeSelect');
+            if (fontSizeSelect) fontSizeSelect.value = '24';
         }
     }
 
-    // Initialisation des événements
-    saveBtnTop.addEventListener("click", saveFile);
-    saveAllBtnTop.addEventListener("click", saveAllTabs);
-    resetBtnTop.addEventListener("click", Tabs.resetAllTabs);
+    if (saveBtnTop) saveBtnTop.addEventListener("click", saveFile);
+    if (saveAllBtnTop) saveAllBtnTop.addEventListener("click", saveAllTabs);
+    if (resetBtnTop) resetBtnTop.addEventListener("click", Tabs.resetAllTabs);
     document.addEventListener("keydown", handleGlobalKeyDown);
 
-    // Initialisation des modules
-    console.log("📦 Initialisation des modules...");
     UI.init();
     Theme.init();
-    Editor.init();
-    Tabs.init();
+
+    if (typeof Editor !== 'undefined' && Editor.init) {
+        debugLog('📝 Appel de Editor.init() depuis app.js');
+        Editor.init();
+    } else {
+        console.error('❌ Editor non trouvé');
+    }
     
-    // Initialisation du scanner
     if (typeof CameraScanner !== 'undefined') {
-        console.log("📷 Initialisation du CameraScanner");
+        debugLog("📷 Initialisation du CameraScanner");
         CameraScanner.init();
     } else {
         console.error("❌ CameraScanner non trouvé");
     }
 
-    // Fin de la restauration
     AppState.isRestoring = false;
     
-    console.log("✅ Application prête!");
-
+    // Mettre à jour l'indicateur de mode dans le footer
+    setTimeout(() => {
+        const mode = window.Auth ? window.Auth.getCurrentMode() : null;
+        const modeIcon = document.getElementById('modeIcon');
+        const modeText = document.getElementById('modeText');
+        
+        if (modeIcon && modeText) {
+            if (mode === 'solo') {
+                modeIcon.textContent = '👤';
+                modeText.textContent = 'Solo';
+            } else {
+                modeIcon.textContent = '👥';
+                modeText.textContent = 'Collaboratif';
+            }
+        }
+    }, 500);
+    
+    debugLog("✅ Application prête en attente de connexion");
 })();

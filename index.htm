@@ -3,118 +3,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Reco</title>
+    <title>Reco - Récolement CDI</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
     <!-- Librairie scanner caméra -->
     <script src="https://unpkg.com/html5-qrcode"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics-compat.js"></script>
+    
+    <!-- Configuration Firebase (externe) -->
+    <script src="js/firebase-config.js"></script>
+    <!-- Script de debug -->
+    <script src="js/debug.js"></script>
 </head>
 <body>
 
-<div class="header">
-    <div class="header-left">
-        <div class="hamburger-menu" id="hamburgerMenu">
-            <span></span>
-            <span></span>
-            <span></span>
+<!-- Écran de connexion UAI -->
+<div id="loginScreen" class="login-screen">
+    <div class="login-card">
+        <h1>Reco</h1>
+        <p>Application d'aide au récolement collaboratif</p>
+        
+        <!-- Choix du mode -->
+        <div class="mode-selector">
+            <div class="mode-option">
+                <input type="radio" name="mode" id="modeCollab" value="collab" checked>
+                <label for="modeCollab">
+                    <strong>👥 Mode collaboratif</strong>
+                    <span class="mode-desc">
+                        • Travail à plusieurs en même temps.<br>
+                        • Synchronisation entre appareils.<br>
+                        • Données dans le cloud.<br>
+                        • Connexion Internet requise.<br> 
+                </span>
+                </label>
+            </div>
+            <div class="mode-option">
+                <input type="radio" name="mode" id="modeSolo" value="solo">
+                <label for="modeSolo">
+                    <strong>👤 Mode solo</strong>
+                    <span class="mode-desc">
+                        • Pas de synchronisation.<br> 
+                        • Données locales uniquement.<br>
+                        • Fonctionne sans Internet.<br>
+                    </span>
+                </label>
+            </div>
         </div>
-        <h2>Reco</h2>
-    </div>
-
-    <!-- Menu mobile overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-    
-    <!-- Menu latéral mobile -->
-    <nav class="mobile-nav" id="mobileNav">
-        <div class="mobile-nav-header">
-            <h3>Menu</h3>
-            <button class="close-menu" id="closeMenuBtn">✖</button>
-        </div>
-        <div class="mobile-nav-content">
-            <button id="cameraScanBtnMobile" class="mobile-nav-btn" data-tooltip="Scanner avec la caméra">
-                <span class="btn-icon">📷</span>
-                <span class="btn-text">Scanner caméra</span>
-            </button>
-            <button id="saveBtnTopMobile" class="mobile-nav-btn" data-tooltip="Exporter l'onglet actuel">
-                <span class="btn-icon">📤</span>
-                <span class="btn-text">Exporter l'onglet</span>
-            </button>
-            <button id="saveAllBtnTopMobile" class="mobile-nav-btn" data-tooltip="Exporter tous les onglets">
-                <span class="btn-icon">📦</span>
-                <span class="btn-text">Exporter tous</span>
-            </button>
-            <button id="replaceTabsBtnMobile" class="mobile-nav-btn" data-tooltip="Remplacer tous les onglets">
-                <span class="btn-icon">🔄</span>
-                <span class="btn-text">Remplacer onglets</span>
-            </button>
-            <button id="resetBtnTopMobile" class="mobile-nav-btn" data-tooltip="Réinitialiser tous les onglets">
-                <span class="btn-icon">🗑️</span>
-                <span class="btn-text">Réinitialiser</span>
-            </button>
-            <button id="statsBtnMobile" class="mobile-nav-btn" data-tooltip="Statistiques">
-                <span class="btn-icon">📊</span>
-                <span class="btn-text">Statistiques</span>
-            </button>
-            <button id="themeBtnTopMobile" class="mobile-nav-btn" data-tooltip="Mode nuit">
-                <span class="btn-icon">🌙</span>
-                <span class="btn-text">Mode nuit</span>
-            </button>
-        </div>
-    </nav>
-
-    <!-- Barre d'outils desktop -->
-    <div class="toolbar desktop-toolbar">
-        <button id="cameraScanBtn" class="icon-btn" data-tooltip="Scanner avec la caméra">📷</button>
-        <button id="saveBtnTop" class="icon-btn" data-tooltip="Exporter l'onglet actuel">📤</button>
-        <button id="saveAllBtnTop" class="icon-btn" data-tooltip="Exporter tous les onglets">📦</button>
-        <button id="replaceTabsBtn" class="icon-btn" data-tooltip="Remplacer tous les onglets">🔄</button>
-        <button id="resetBtnTop" class="icon-btn" data-tooltip="Réinitialiser tous les onglets">🗑️</button>
-        <button id="statsBtn" class="icon-btn" data-tooltip="Statistiques">📊</button>
-        <button id="themeBtnTop" class="icon-btn" data-tooltip="Mode nuit">🌙</button>
+        
+        <label for="uaiInput">Code UAI de l'établissement</label>
+        <input type="text" id="uaiInput" placeholder="Ex: 9740066D" maxlength="9" autocomplete="off">
+        <div id="uaiHelp" class="uai-help">Obligatoire en mode collaboratif</div>
+        
+        <button id="loginBtn">Accéder</button>
+        <div id="loginError" class="login-error"></div>
     </div>
 </div>
 
-<div class="tabs" id="tabs"></div>
+<!-- Application principale (cachée au départ) -->
+<div id="mainApp" style="display: none;">
+    <div class="header">
+        <div class="header-left">
+            <div class="hamburger-menu" id="hamburgerMenu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+            <h2>Reco <span id="currentUAI" class="uai-badge"></span></h2>
+        </div>
 
-<textarea id="note" placeholder="─── Scannez vos documents ici ───
+        <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+        
+        <nav class="mobile-nav" id="mobileNav">
+            <div class="mobile-nav-header">
+                <h3>Menu</h3>
+                <button class="close-menu" id="closeMenuBtn">✖</button>
+            </div>
+            <div class="mobile-nav-content">
+                <button id="cameraScanBtnMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">📷</span>
+                    <span class="btn-text">Scanner caméra</span>
+                </button>
+                <button id="saveBtnTopMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">📤</span>
+                    <span class="btn-text">Exporter l'onglet</span>
+                </button>
+                <button id="saveAllBtnTopMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">📦</span>
+                    <span class="btn-text">Exporter tous</span>
+                </button>
+                <button id="replaceTabsBtnMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">🔄</span>
+                    <span class="btn-text">Remplacer onglets</span>
+                </button>
+                <button id="resetBtnTopMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">🗑️</span>
+                    <span class="btn-text">Réinitialiser</span>
+                </button>
+                <button id="statsBtnMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-text">Statistiques</span>
+                </button>
+                <button id="themeBtnTopMobile" class="mobile-nav-btn">
+                    <span class="btn-icon">🌙</span>
+                    <span class="btn-text">Mode nuit</span>
+                </button>
+                <button id="logoutBtnMobile" class="mobile-nav-btn logout-btn">
+                    <span class="btn-icon">🚪</span>
+                    <span class="btn-text">Changer d'établissement</span>
+                </button>
+            </div>
+        </nav>
+
+        <div class="toolbar desktop-toolbar">
+            <button id="cameraScanBtn" class="icon-btn" data-tooltip="Scanner avec la caméra">📷</button>
+            <button id="saveBtnTop" class="icon-btn" data-tooltip="Exporter l'onglet actuel">📤</button>
+            <button id="saveAllBtnTop" class="icon-btn" data-tooltip="Exporter tous les onglets">📦</button>
+            <button id="replaceTabsBtn" class="icon-btn" data-tooltip="Remplacer tous les onglets">🔄</button>
+            <button id="resetBtnTop" class="icon-btn" data-tooltip="Réinitialiser tous les onglets">🗑️</button>
+            <button id="statsBtn" class="icon-btn" data-tooltip="Statistiques">📊</button>
+            <button id="logoutBtn" class="icon-btn" data-tooltip="Changer d'établissement">🚪</button>
+            <button id="themeBtnTop" class="icon-btn" data-tooltip="Mode nuit">🌙</button>
+        </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <textarea id="note" placeholder="─── Scannez vos documents ici ───
 L'application enregistre automatiquement.
+
+En mode collaboratif : synchronisation entre tous les appareils du même établissement.
+En mode solo : données stockées uniquement sur cet appareil.
 
 Vous pouvez :
 – créer, renommer/supprimer (clic droit) ou déplacer les onglets
 – voir les onglets remplis (point vert)
 – exporter vos données
 – scanner avec la caméra (bouton 📷)
-– scanner normalement : la touche Tab est automatiquement convertie en retour à la ligne (aucune configuration de la douchette nécessaire).
+– la touche Tab est automatiquement convertie en retour à la ligne
 "></textarea>
 
-<!-- Footer unique pour tous les appareils -->
-<footer class="app-footer">
-    <div class="footer-left">
-        <select id="fontSizeSelect">
-            <option value="16">16 px</option>
-            <option value="24">24 px</option>
-            <option value="32">32 px</option>
-            <option value="48">48 px</option>
-            <option value="64">64 px</option>
-        </select>
+    <footer class="app-footer">
+        <div class="footer-left">
+            <select id="fontSizeSelect">
+                <option value="16">16 px</option>
+                <option value="24">24 px</option>
+                <option value="32">32 px</option>
+                <option value="48">48 px</option>
+                <option value="64">64 px</option>
+            </select>
+        </div>
+        <div class="footer-right">
+            <div id="saveFeedback">💾 Sauvegardé</div>
+            <div id="lineCount">0 ligne</div>
+            <div class="status-divider"></div>
+            <div id="connectionStatus" class="footer-status">
+                <span class="status-icon" id="connectionIcon">🟢</span>
+                <span class="status-text" id="connectionText">En ligne</span>
+            </div>
+            <div id="syncStatusFooter" class="footer-status">
+                <span class="status-icon" id="syncIconFooter">☁️</span>
+                <span class="status-text" id="syncTextFooter">Synchronisé</span>
+                <span id="pendingBadge" class="pending-badge" style="display: none;">0</span>
+            </div>
+            <div class="status-divider"></div>
+            <div id="modeIndicator" class="footer-status">
+                <span class="status-icon" id="modeIcon">👥</span>
+                <span class="status-text" id="modeText">Collaboratif</span>
+            </div>
+            <div class="status-divider"></div>
+            <a href="#" id="privacyLink" class="footer-link" data-tooltip="Politique de confidentialité">🔒</a>
+            <a href="#" id="legalLink" class="footer-link" data-tooltip="Mentions légales">⚖️</a>
+            <a href="https://github.com/jeromemtl/reco" target="_blank" class="footer-link" data-tooltip="Code source">💻</a>
+        </div>
+    </footer>
+</div>
+
+<!-- Modale Politique de confidentialité -->
+<div id="privacyModal" class="modal">
+    <div class="modal-content">
+        <h3>🔒 Politique de confidentialité</h3>
+        <div class="modal-text">
+            <p><strong>📊 Données collectées</strong><br>
+            • Code UAI de l'établissement (identifiant public).<br>
+            • Contenu scanné (codes-barres, textes saisis).<br>
+            • Mode d'utilisation (solo ou collaboratif).<br>
+            • Dates de première et dernière utilisation.</p>
+            
+            <p><strong>🎯 Finalité</strong><br>
+            • Données de récolement : permettre le récolement collaboratif au sein de l'établissement.<br>
+            • Statistiques : connaître le nombre d'établissements utilisant l'application.</p>
+            
+            <p><strong>📍 Stockage</strong><br>
+            • Données de récolement : hébergées sur Google Cloud Firestore (Europe) en mode collaboratif.<br>
+            • Données statistiques : hébergées sur Google Cloud Firestore (Europe).</p>
+            
+            <p><strong>⏱️ Durée de conservation</strong><br>
+            • Données de récolement : conservées tant que l'établissement utilise l'application.<br>
+            • Données statistiques : conservées à des fins d'analyse.</p>
+            
+            <p><strong>🗑️ Vos droits</strong><br>
+            Vous pouvez supprimer vos données à tout moment via le bouton "Réinitialiser" dans l'application.</p>
+            
+            <p><strong>📧 Formulaire de contact</strong><br>
+            <a href="https://forms.gle/tftazdtDst8yK3TH8" target="_blank">Contactez-moi</a>.</p>
+        </div>
+        <div class="modal-buttons">
+            <button id="privacyClose">Fermer</button>
+        </div>
     </div>
-    <div class="footer-right">
-        <div id="saveFeedback">💾 Sauvegardé</div>
-        <div id="lineCount">0 ligne</div>
+</div>
+
+<!-- Modale Mentions légales -->
+<div id="legalModal" class="modal">
+    <div class="modal-content">
+        <h3>⚖️ Mentions légales</h3>
+        <div class="modal-text">
+            <p><strong>📱 Éditeur</strong><br>
+            Application développée par JeromeMTL.<br>
+            Contact : <a href="https://forms.gle/tftazdtDst8yK3TH8" target="_blank">Formulaire de contact</a>.</p>
+            
+            <p><strong>🌐 Hébergement</strong><br>
+            • Code source : <a href="https://pages.github.com/" target="_blank">GitHub Pages</a>.<br>
+            • Données : <a href="https://cloud.google.com/firestore" target="_blank">Google Cloud Firestore</a> (europe-west1).<br>
+            • Formulaire de contact : <a href="https://workspace.google.com/products/forms/" target="_blank">Google Forms</a>.</p>
+            
+            <p><strong>📜 Licences</strong><br>
+            Code original : <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a>.<br>
+            Bibliothèque html5-qrcode : <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache 2.0</a>.<br>
+            <a href="https://github.com/jeromemtl/reco" target="_blank">Code source sur GitHub</a>.</p>
+        </div>
+        <div class="modal-buttons">
+            <button id="legalClose">Fermer</button>
+        </div>
     </div>
-</footer>
+</div>
+
+<!-- Modale de confirmation changement de mode -->
+<div id="modeSwitchModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modeSwitchTitle">⚠️ Changement de mode</h3>
+        <div id="modeSwitchMessage" class="modal-text">
+            <!-- Le message sera rempli dynamiquement -->
+        </div>
+        <div class="modal-buttons">
+            <button id="modeSwitchCancel">Annuler</button>
+            <button id="modeSwitchConfirm">Continuer</button>
+        </div>
+    </div>
+</div>
 
 <div id="contextMenu">
     <div id="renameOption">✏️ Renommer</div>
     <div id="deleteOption">🗑️ Supprimer</div>
 </div>
 
-<!-- Remplacer les onglets -->
 <div id="replaceModal" class="modal">
     <div class="modal-content">
         <h3>Remplacer tous les onglets</h3>
         <p>Entrez un nom d'onglet par ligne :</p>
         <textarea id="replaceInput"></textarea>
-
         <div class="modal-buttons">
             <button id="replaceCancel">Annuler</button>
             <button id="replaceConfirm">Valider</button>
@@ -122,12 +273,10 @@ Vous pouvez :
     </div>
 </div>
 
-<!-- Statistiques -->
 <div id="statsModal" class="modal">
     <div class="modal-content">
         <h3>Statistiques</h3>
         <pre id="statsOutput"></pre>
-
         <div class="modal-buttons">
             <button id="statsSave">Enregistrer</button>
             <button id="statsClose">Fermer</button>
@@ -135,14 +284,17 @@ Vous pouvez :
     </div>
 </div>
 
-<!-- Scripts -->
 <script src="js/storage.js"></script>
-<script src="js/tabs.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/editor.js"></script>
+<script src="js/tabs.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/theme.js"></script>
 <script src="js/scanner-camera.js"></script>
 <script src="js/mobile-menu.js"></script>
 <script src="js/app.js"></script>
+<script src="js/modal.js"></script>
+
 </body>
 </html>

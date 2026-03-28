@@ -1,68 +1,95 @@
 /* -------------------- ÉDITEUR / TEXTAREA -------------------- */
 
+window.Editor = null;
+
 const Editor = (() => {
     const note = document.getElementById("note");
     const lineCountEl = document.getElementById("lineCount");
-    const saveFeedback = document.getElementById("saveFeedback");
     const fontSizeSelect = document.getElementById("fontSizeSelect");
+    
+    let saveTimeout = null;
 
-    /* -------------------- FEEDBACK VISUEL -------------------- */
-    function showSaveFeedback() {
-        saveFeedback.classList.add("visible");
-        setTimeout(() => saveFeedback.classList.remove("visible"), 600);
-    }
-
-    /* -------------------- COMPTEUR DE LIGNES -------------------- */
     function updateLineCount() {
+        if (!note || !lineCountEl) return;
         const lines = note.value.split("\n").filter(l => l.trim() !== "").length;
         lineCountEl.textContent = lines + (lines <= 1 ? " ligne" : " lignes");
     }
 
-    /* -------------------- AUTOSAVE -------------------- */
-    function autoSave() {
+    function updatePointVert() {
+        if (window.Tabs) {
+            // Petit délai pour s'assurer que le DOM est à jour
+            setTimeout(() => {
+                window.Tabs.updateTabIndicators();
+            }, 10);
+        }
+    }
+
+    function saveToLocal() {
         if (AppState.isRestoring) return;
         if (!AppState.currentTab) return;
 
         AppState.files[AppState.currentTab] = note.value;
+        
+        localStorage.setItem('cdiFiles', JSON.stringify(AppState.files));
+        localStorage.setItem('cdiTabOrder', JSON.stringify(AppState.tabOrder));
+        localStorage.setItem('cdiCurrentTab', AppState.currentTab);
+        
+        // Mettre à jour le point vert
+        updatePointVert();
+    }
+
+    function saveToCloud() {
+        if (AppState.isRestoring) return;
+        if (!AppState.currentTab) return;
+
+        AppState.files[AppState.currentTab] = note.value;
+        
+        localStorage.setItem('cdiFiles', JSON.stringify(AppState.files));
+        localStorage.setItem('cdiTabOrder', JSON.stringify(AppState.tabOrder));
+        localStorage.setItem('cdiCurrentTab', AppState.currentTab);
+        
         Storage.saveState();
-        showSaveFeedback();
-        Tabs.updateTabIndicators();
+        
+        // Mettre à jour le point vert
+        updatePointVert();
     }
 
-    /* -------------------- ENTER = AUTOSAVE -------------------- */
-    function handleEnter(e) {
+    function debouncedLocalSave() {
+        if (saveTimeout) clearTimeout(saveTimeout);
+        saveTimeout = setTimeout(() => {
+            saveToLocal();
+        }, 300);
+    }
+
+    function handleInput() {
+        updateLineCount();
+        updatePointVert();  // IMMÉDIAT - point vert apparaît dès la première frappe
+        debouncedLocalSave();  // Sauvegarde locale différée
+    }
+
+    function handleKeydown(e) {
         if (e.key === "Enter") {
+            // Sauvegarde cloud immédiate
             setTimeout(() => {
-                updateLineCount();
-                autoSave();
+                saveToCloud();
             }, 0);
-        }
-    }
-
-    /* -------------------- TAB = RETOUR À LA LIGNE -------------------- */
-    function handleTab(e) {
-        if (e.key === "Tab") {
+        } else if (e.key === "Tab") {
             e.preventDefault();
             const start = note.selectionStart;
             const end = note.selectionEnd;
             note.value = note.value.substring(0, start) + "\n" + note.value.substring(end);
             note.selectionStart = note.selectionEnd = start + 1;
             updateLineCount();
-            autoSave();
-        }
-    }
-
-    /* -------------------- BACKSPACE = AUTOSAVE -------------------- */
-    function handleBackspace(e) {
-        if (e.key === "Backspace") {
+            saveToCloud();
+        } else if (e.key === "Backspace") {
+            // Laisser le comportement par défaut, puis mettre à jour
             setTimeout(() => {
                 updateLineCount();
-                autoSave();
+                updatePointVert();  // Point vert mis à jour après suppression
             }, 0);
         }
     }
 
-    /* -------------------- TAILLE DU TEXTE -------------------- */
     function initFontSize() {
         const savedSize = Storage.loadFontSize();
         if (savedSize) {
@@ -77,23 +104,31 @@ const Editor = (() => {
         });
     }
 
-    /* -------------------- INITIALISATION -------------------- */
     function init() {
+        debugLog('✅ Editor initialisé');
         note.focus();
-
-        note.addEventListener("keydown", (e) => {
-            handleEnter(e);
-            handleTab(e);
-            handleBackspace(e);
-        });
+        
+        note.addEventListener("input", handleInput);
+        note.addEventListener("keydown", handleKeydown);
 
         initFontSize();
-        updateLineCount();
+        
+        setTimeout(() => {
+            updateLineCount();
+            updatePointVert();
+        }, 100);
     }
 
-    return {
-        init,
-        autoSave,
-        updateLineCount
+    function forceCloudSave() {
+        saveToCloud();
+    }
+
+    const publicAPI = {
+        init: init,
+        updateLineCount: updateLineCount,
+        forceCloudSave: forceCloudSave
     };
+    
+    window.Editor = publicAPI;
+    return publicAPI;
 })();

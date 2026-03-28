@@ -129,24 +129,32 @@ const UI = (() => {
     }
 
     function initStats() {
-        statsBtn.addEventListener("click", showStatsModal);
-        statsClose.addEventListener("click", hideStatsModal);
-        statsSave.addEventListener("click", exportStats);
+        if (statsBtn) statsBtn.addEventListener("click", showStatsModal);
+        if (statsClose) statsClose.addEventListener("click", hideStatsModal);
+        if (statsSave) statsSave.addEventListener("click", exportStats);
+        
+        const statsBtnMobile = document.getElementById("statsBtnMobile");
+        if (statsBtnMobile) statsBtnMobile.addEventListener("click", showStatsModal);
     }
 
     function initReplaceTabs() {
-        replaceTabsBtn.addEventListener("click", showReplaceModal);
-        replaceCancel.addEventListener("click", hideReplaceModal);
+        if (replaceTabsBtn) replaceTabsBtn.addEventListener("click", showReplaceModal);
+        if (replaceCancel) replaceCancel.addEventListener("click", hideReplaceModal);
 
-        replaceConfirm.addEventListener("click", () => {
-            const raw = replaceInput.value;
-            if (!raw.trim()) {
-                alert("Aucun nom d’onglet fourni.");
-                return;
-            }
-            const ok = Tabs.replaceAllTabsFromList(raw);
-            if (ok) hideReplaceModal();
-        });
+        if (replaceConfirm) {
+            replaceConfirm.addEventListener("click", () => {
+                const raw = replaceInput.value;
+                if (!raw.trim()) {
+                    alert("Aucun nom d’onglet fourni.");
+                    return;
+                }
+                const ok = Tabs.replaceAllTabsFromList(raw);
+                if (ok) hideReplaceModal();
+            });
+        }
+        
+        const replaceTabsBtnMobile = document.getElementById("replaceTabsBtnMobile");
+        if (replaceTabsBtnMobile) replaceTabsBtnMobile.addEventListener("click", showReplaceModal);
     }
 
     function init() {

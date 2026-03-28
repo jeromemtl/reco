@@ -7,7 +7,6 @@ const CameraScanner = (() => {
     let audioContext = null;
     let hasFlash = false;
     
-    // Vérifier si le flash est supporté
     async function checkFlashSupport() {
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -16,9 +15,7 @@ const CameraScanner = (() => {
             
             const devices = await navigator.mediaDevices.enumerateDevices();
             const hasCamera = devices.some(device => device.kind === 'videoinput');
-            if (!hasCamera) {
-                return false;
-            }
+            if (!hasCamera) return false;
             
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "environment" } 
@@ -39,7 +36,6 @@ const CameraScanner = (() => {
         }
     }
     
-    // Créer un bip sonore avec l'API Web Audio
     function playBeep() {
         const beepEnabled = document.getElementById("beep-option")?.checked;
         if (!beepEnabled) return;
@@ -64,16 +60,13 @@ const CameraScanner = (() => {
         } catch (e) {}
     }
     
-    // Obtenir le nombre de lignes de l'onglet courant
     function getCurrentTabLineCount() {
         if (!AppState.currentTab) return 0;
-        
         const content = AppState.files[AppState.currentTab] || "";
         const lines = content.split("\n").filter(l => l.trim() !== "").length;
         return lines;
     }
     
-    // Mettre à jour l'affichage du compteur
     function updateLineCountDisplay() {
         const lineCountBadge = document.querySelector('.badge-lines');
         if (lineCountBadge && AppState.currentTab) {
@@ -82,7 +75,6 @@ const CameraScanner = (() => {
         }
     }
     
-    // Créer l'interface du scanner
     async function createScannerUI() {
         const oldContainer = document.getElementById("camera-scanner-container");
         if (oldContainer) oldContainer.remove();
@@ -242,6 +234,8 @@ const CameraScanner = (() => {
             if (note) {
                 AppState.files[AppState.currentTab] = note.value;
                 Storage.saveState();
+                // Mettre à jour le point vert
+                if (window.Tabs) window.Tabs.updateTabIndicators();
             }
         }
         
@@ -258,8 +252,8 @@ const CameraScanner = (() => {
                 isScanning = false;
                 
                 setTimeout(() => {
-                    if (typeof Editor !== 'undefined' && Editor.autoSave) {
-                        Editor.autoSave();
+                    if (typeof Editor !== 'undefined' && Editor.forceCloudSave) {
+                        Editor.forceCloudSave();
                     }
                     if (typeof Tabs !== 'undefined' && Tabs.updateTabIndicators) {
                         Tabs.updateTabIndicators();
@@ -278,8 +272,8 @@ const CameraScanner = (() => {
             isScanning = false;
             
             setTimeout(() => {
-                if (typeof Editor !== 'undefined' && Editor.autoSave) {
-                    Editor.autoSave();
+                if (typeof Editor !== 'undefined' && Editor.forceCloudSave) {
+                    Editor.forceCloudSave();
                 }
                 if (typeof Tabs !== 'undefined' && Tabs.updateTabIndicators) {
                     Tabs.updateTabIndicators();
@@ -330,13 +324,20 @@ const CameraScanner = (() => {
         }
         
         AppState.files[AppState.currentTab] = note.value;
+        
+        localStorage.setItem('cdiFiles', JSON.stringify(AppState.files));
+        localStorage.setItem('cdiTabOrder', JSON.stringify(AppState.tabOrder));
+        localStorage.setItem('cdiCurrentTab', AppState.currentTab);
+        
         Storage.saveState();
+        
+        // Mettre à jour le point vert immédiatement
+        if (window.Tabs) window.Tabs.updateTabIndicators();
         
         if (typeof Editor !== 'undefined') {
             Editor.updateLineCount();
         }
         
-        // Mettre à jour l'affichage du compteur dans le scanner
         updateLineCountDisplay();
         
         note.dispatchEvent(new Event('input', { bubbles: true }));
@@ -346,9 +347,9 @@ const CameraScanner = (() => {
     
     function init() {
         const cameraBtn = document.getElementById("cameraScanBtn");
-        if (cameraBtn) {
-            cameraBtn.addEventListener("click", startScanner);
-        }
+        const cameraBtnMobile = document.getElementById("cameraScanBtnMobile");
+        if (cameraBtn) cameraBtn.addEventListener("click", startScanner);
+        if (cameraBtnMobile) cameraBtnMobile.addEventListener("click", startScanner);
     }
     
     return {
