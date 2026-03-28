@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Test Caméra - Reco</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            text-align: center;
+            color: #4285f4;
+        }
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        video {
+            width: 100%;
+            max-width: 400px;
+            display: block;
+            margin: 15px auto;
+            border-radius: 8px;
+            background: #000;
+            transform: scaleX(-1);
+        }
+        .qr-reader {
+            width: 100%;
+            min-height: 300px;
+            background: #000;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .logs {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .log-line {
+            border-bottom: 1px solid #333;
+            padding: 4px 0;
+        }
+        hr {
+            margin: 20px 0;
+        }
+    </style>
+    <!-- Librairie scanner caméra -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
+    <h1>📷 Test Caméra - Reco</h1>
+    
+    <!-- Test 1 : Simple vidéo -->
+    <div class="test-section">
+        <h3>🔍 Test 1 : Affichage vidéo simple</h3>
+        <p>Vérifie si l'accès à la caméra fonctionne</p>
+        <video id="videoPreview" autoplay playsinline muted></video>
+        <button id="btnTestVideo">Démarrer la caméra</button>
+        <div id="statusVideo" class="status info">En attente...</div>
+    </div>
+    
+    <!-- Test 2 : Scanner avec html5-qrcode -->
+    <div class="test-section">
+        <h3>🔍 Test 2 : Scanner avec html5-qrcode</h3>
+        <p>Teste la librairie de scan de codes-barres</p>
+        <div id="qr-reader" class="qr-reader"></div>
+        <button id="btnTestScanner">Démarrer le scanner</button>
+        <button id="btnStopScanner" disabled>Arrêter le scanner</button>
+        <div id="statusScanner" class="status info">En attente...</div>
+        <div id="scanResult" style="margin-top: 10px; font-weight: bold;"></div>
+    </div>
+    
+    <!-- Logs -->
+    <div class="test-section">
+        <h3>📋 Logs</h3>
+        <div id="logs" class="logs"></div>
+    </div>
+    
+    <script>
+        // Fonction pour ajouter des logs
+        function addLog(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const time = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#f44336' : (type === 'success' ? '#4caf50' : '#d4d4d4');
+            const logLine = document.createElement('div');
+            logLine.className = 'log-line';
+            logLine.style.color = color;
+            logLine.textContent = `[${time}] ${message}`;
+            logsDiv.appendChild(logLine);
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // Test 1 : Vidéo simple
+        const videoPreview = document.getElementById('videoPreview');
+        const btnTestVideo = document.getElementById('btnTestVideo');
+        const statusVideo = document.getElementById('statusVideo');
+        let videoStream = null;
+        
+        btnTestVideo.addEventListener('click', async () => {
+            addLog('🔍 Test vidéo : demande d\'accès caméra...');
+            statusVideo.className = 'status info';
+            statusVideo.textContent = 'Demande d\'accès...';
+            
+            try {
+                // Arrêter l'ancien stream si existant
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => track.stop());
+                }
+                
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: { exact: "environment" } }
+                });
+                
+                videoStream = stream;
+                videoPreview.srcObject = stream;
+                
+                addLog('✅ Caméra arrière démarrée avec succès !', 'success');
+                statusVideo.className = 'status success';
+                statusVideo.textContent = '✅ Caméra fonctionne !';
+                
+            } catch (err) {
+                // Fallback : caméra avant
+                addLog(`⚠️ Erreur caméra arrière: ${err.message}`, 'error');
+                addLog('🔄 Essai avec caméra avant...');
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: "user" }
+                    });
+                    videoStream = stream;
+                    videoPreview.srcObject = stream;
+                    
+                    addLog('✅ Caméra avant démarrée avec succès !', 'success');
+                    statusVideo.className = 'status success';
+                    statusVideo.textContent = '✅ Caméra avant fonctionne !';
+                    
+                } catch (err2) {
+                    addLog(`❌ Échec total: ${err2.message}`, 'error');
+                    statusVideo.className = 'status error';
+                    statusVideo.textContent = `❌ Erreur: ${err2.message}`;
+                }
+            }
+        });
+        
+        // Test 2 : Scanner html5-qrcode
+        let html5QrScanner = null;
+        let isScanning = false;
+        const btnTestScanner = document.getElementById('btnTestScanner');
+        const btnStopScanner = document.getElementById('btnStopScanner');
+        const statusScanner = document.getElementById('statusScanner');
+        const scanResult = document.getElementById('scanResult');
+        
+        btnTestScanner.addEventListener('click', async () => {
+            addLog('🔍 Test scanner : démarrage...');
+            statusScanner.className = 'status info';
+            statusScanner.textContent = 'Démarrage...';
+            
+            // Vérifier les permissions
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                addLog('❌ getUserMedia non supporté', 'error');
+                statusScanner.className = 'status error';
+                statusScanner.textContent = '❌ Navigateur non compatible';
+                return;
+            }
+            
+            try {
+                // Tester l'accès caméra d'abord
+                const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                testStream.getTracks().forEach(track => track.stop());
+                addLog('✅ Accès caméra autorisé', 'success');
+            } catch (err) {
+                addLog(`❌ Accès caméra refusé: ${err.message}`, 'error');
+                statusScanner.className = 'status error';
+                statusScanner.textContent = `❌ Accès refusé: ${err.message}`;
+                return;
+            }
+            
+            const config = {
+                fps: 10,
+                qrbox: { width: 250, height: 250 },
+                rememberLastUsedCamera: true,
+                disableFlip: false,
+                formatsToSupport: [
+                    Html5QrcodeSupportedFormats.EAN_13,
+                    Html5QrcodeSupportedFormats.EAN_8,
+                    Html5QrcodeSupportedFormats.CODE_39,
+                    Html5QrcodeSupportedFormats.CODE_128,
+                    Html5QrcodeSupportedFormats.QR_CODE
+                ]
+            };
+            
+            html5QrScanner = new Html5Qrcode("qr-reader");
+            
+            const onScanSuccess = (decodedText, decodedResult) => {
+                addLog(`📷 Scan réussi: ${decodedText}`, 'success');
+                scanResult.innerHTML = `✅ Dernier code: ${decodedText}`;
+                statusScanner.className = 'status success';
+                statusScanner.textContent = '✅ Code détecté !';
+                
+                // Réinitialiser le message après 2 secondes
+                setTimeout(() => {
+                    if (statusScanner.textContent === '✅ Code détecté !') {
+                        statusScanner.textContent = 'Scanner actif...';
+                    }
+                }, 2000);
+            };
+            
+            const onScanFailure = (errorMessage) => {
+                // Ignorer les erreurs normales
+            };
+            
+            // Essayer différentes configurations de caméra
+            const cameraConfigs = [
+                { facingMode: { exact: "environment" } },
+                { facingMode: "environment" },
+                { facingMode: "user" }
+            ];
+            
+            let started = false;
+            
+            for (const cameraConfig of cameraConfigs) {
+                if (started) break;
+                try {
+                    addLog(`🔄 Essai config: ${JSON.stringify(cameraConfig)}`);
+                    await html5QrScanner.start(
+                        cameraConfig,
+                        config,
+                        onScanSuccess,
+                        onScanFailure
+                    );
+                    started = true;
+                    isScanning = true;
+                    addLog('✅ Scanner démarré avec succès !', 'success');
+                    statusScanner.className = 'status success';
+                    statusScanner.textContent = '✅ Scanner actif, pointez vers un code-barres';
+                    btnTestScanner.disabled = true;
+                    btnStopScanner.disabled = false;
+                } catch (err) {
+                    addLog(`❌ Échec: ${err.message}`, 'error');
+                }
+            }
+            
+            if (!started) {
+                addLog('❌ Impossible de démarrer le scanner', 'error');
+                statusScanner.className = 'status error';
+                statusScanner.textContent = '❌ Impossible de démarrer le scanner';
+            }
+        });
+        
+        btnStopScanner.addEventListener('click', async () => {
+            if (html5QrScanner && isScanning) {
+                addLog('🛑 Arrêt du scanner...');
+                try {
+                    await html5QrScanner.stop();
+                    html5QrScanner.clear();
+                    addLog('✅ Scanner arrêté', 'success');
+                    statusScanner.className = 'status info';
+                    statusScanner.textContent = 'Scanner arrêté';
+                    btnTestScanner.disabled = false;
+                    btnStopScanner.disabled = true;
+                    isScanning = false;
+                } catch (err) {
+                    addLog(`❌ Erreur arrêt: ${err.message}`, 'error');
+                }
+            }
+        });
+        
+        addLog('📱 Page de test chargée. Cliquez sur les boutons pour tester.', 'info');
+        addLog('ℹ️ Si la caméra ne démarre pas, vérifiez les permissions dans les paramètres du navigateur.', 'info');
+    </script>
+</body>
+</html>
