@@ -7,6 +7,7 @@ const CameraScanner = (() => {
     let audioContext = null;
     let hasFlash = false;
     
+    // Vérifier si le flash est supporté
     async function checkFlashSupport() {
         try {
             if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
@@ -15,7 +16,9 @@ const CameraScanner = (() => {
             
             const devices = await navigator.mediaDevices.enumerateDevices();
             const hasCamera = devices.some(device => device.kind === 'videoinput');
-            if (!hasCamera) return false;
+            if (!hasCamera) {
+                return false;
+            }
             
             const stream = await navigator.mediaDevices.getUserMedia({ 
                 video: { facingMode: "environment" } 
@@ -36,6 +39,7 @@ const CameraScanner = (() => {
         }
     }
     
+    // Créer un bip sonore avec l'API Web Audio
     function playBeep() {
         const beepEnabled = document.getElementById("beep-option")?.checked;
         if (!beepEnabled) return;
@@ -60,13 +64,16 @@ const CameraScanner = (() => {
         } catch (e) {}
     }
     
+    // Obtenir le nombre de lignes de l'onglet courant
     function getCurrentTabLineCount() {
         if (!AppState.currentTab) return 0;
+        
         const content = AppState.files[AppState.currentTab] || "";
         const lines = content.split("\n").filter(l => l.trim() !== "").length;
         return lines;
     }
     
+    // Mettre à jour l'affichage du compteur
     function updateLineCountDisplay() {
         const lineCountBadge = document.querySelector('.badge-lines');
         if (lineCountBadge && AppState.currentTab) {
@@ -75,6 +82,7 @@ const CameraScanner = (() => {
         }
     }
     
+    // Créer l'interface du scanner
     async function createScannerUI() {
         const oldContainer = document.getElementById("camera-scanner-container");
         if (oldContainer) oldContainer.remove();
@@ -110,6 +118,10 @@ const CameraScanner = (() => {
                     </div>
                     
                     <div id="qr-reader" style="width: 100%; margin: 0 auto;"></div>
+                    
+                    <select id="camera-select" style="margin: 10px auto; display: block; padding: 8px; border-radius: 5px; background: var(--bg-light); color: var(--text-light);">
+                        <option value="">Chargement des caméras...</option>
+                    </select>
                     
                     ${flashButtonHTML}
                     
@@ -150,10 +162,58 @@ const CameraScanner = (() => {
         }
     }
     
+    // Fonction pour lister les caméras disponibles
+    async function listCameras() {
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(device => device.kind === 'videoinput');
+            console.log('📷 Caméras disponibles:', videoDevices);
+            
+            const cameraSelect = document.getElementById('camera-select');
+            if (cameraSelect && videoDevices.length > 0) {
+                cameraSelect.innerHTML = videoDevices.map((device, i) => 
+                    `<option value="${device.deviceId}">Caméra ${i + 1}${device.label ? ` (${device.label})` : ''}</option>`
+                ).join('');
+                cameraSelect.insertAdjacentHTML('afterbegin', '<option value="">Auto</option>');
+                cameraSelect.value = '';
+            }
+            return videoDevices;
+        } catch (err) {
+            console.error('Erreur liste caméras:', err);
+            return [];
+        }
+    }
+    
     async function startScanner() {
         if (isScanning) return;
         
+        // Vérifier si la caméra est disponible
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("❌ Votre navigateur ne supporte pas l'accès à la caméra.\n\n" +
+                  "Utilisez Chrome, Safari ou Firefox sur mobile.");
+            return;
+        }
+        
+        // Tester l'accès caméra avant d'ouvrir l'UI
+        try {
+            const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            testStream.getTracks().forEach(track => track.stop());
+        } catch (err) {
+            if (err.name === 'NotAllowedError') {
+                alert("❌ Accès à la caméra refusé.\n\n" +
+                      "Veuillez autoriser l'accès à la caméra dans les paramètres de votre navigateur.");
+            } else if (err.name === 'NotFoundError') {
+                alert("❌ Aucune caméra trouvée sur cet appareil.");
+            } else {
+                alert(`❌ Erreur caméra: ${err.message}`);
+            }
+            return;
+        }
+        
         await createScannerUI();
+        
+        // Lister les caméras disponibles
+        const videoDevices = await listCameras();
         
         const config = {
             fps: 15,
@@ -165,7 +225,7 @@ const CameraScanner = (() => {
             rememberLastUsedCamera: true,
             showTorchButtonIfSupported: false,
             useBarCodeDetectorIfSupported: true,
-            disableFlip: true,
+            disableFlip: false,
             aspectRatio: 1.0,
             formatsToSupport: [
                 Html5QrcodeSupportedFormats.EAN_13,
@@ -175,8 +235,6 @@ const CameraScanner = (() => {
                 Html5QrcodeSupportedFormats.QR_CODE
             ]
         };
-        
-        html5QrcodeScanner = new Html5Qrcode("qr-reader");
         
         const onScanSuccess = (decodedText, decodedResult) => {
             if (scanTimeout) return;
@@ -206,26 +264,100 @@ const CameraScanner = (() => {
             }
         };
         
-        const onScanFailure = (errorMessage) => {};
+        const onScanFailure = (errorMessage) => {
+            // Ignorer les erreurs de scan normales
+        };
         
-        html5QrcodeScanner.start(
-            { facingMode: "environment" },
-            config,
-            onScanSuccess,
-            onScanFailure
-        ).then(() => {
+        html5QrcodeScanner = new Html5Qrcode("qr-reader");
+        
+        // Fonction pour démarrer avec une caméra spécifique
+        const startWithCamera = async (cameraId = null) => {
+            const cameraConfig = cameraId 
+                ? { deviceId: { exact: cameraId } }
+                : { facingMode: "environment" };
+            
+            return html5QrcodeScanner.start(
+                cameraConfig,
+                config,
+                onScanSuccess,
+                onScanFailure
+            );
+        };
+        
+        // Essayer avec la caméra arrière d'abord
+        try {
+            await startWithCamera();
             isScanning = true;
             const statusEl = document.getElementById("scanner-status");
             if (statusEl) {
                 statusEl.textContent = "Scannez un code-barres...";
             }
-        }).catch((err) => {
-            const statusEl = document.getElementById("scanner-status");
-            if (statusEl) {
-                statusEl.innerHTML = "❌ Erreur d'accès à la caméra<br><small>Vérifiez les permissions</small>";
-                statusEl.style.color = "#f44336";
+        } catch (err) {
+            console.log('Erreur avec caméra arrière, essai caméra avant:', err);
+            
+            // Fallback : caméra avant
+            try {
+                await startWithCamera();
+                isScanning = true;
+                const statusEl = document.getElementById("scanner-status");
+                if (statusEl) {
+                    statusEl.textContent = "Scannez un code-barres (caméra avant)...";
+                }
+            } catch (err2) {
+                console.error('Échec caméra avant:', err2);
+                
+                // Dernier fallback : première caméra disponible
+                if (videoDevices.length > 0) {
+                    try {
+                        await startWithCamera(videoDevices[0].deviceId);
+                        isScanning = true;
+                        const statusEl = document.getElementById("scanner-status");
+                        if (statusEl) {
+                            statusEl.textContent = "Scannez un code-barres...";
+                        }
+                    } catch (err3) {
+                        const statusEl = document.getElementById("scanner-status");
+                        if (statusEl) {
+                            statusEl.innerHTML = "❌ Impossible d'accéder à la caméra<br><small>Vérifiez les permissions</small>";
+                            statusEl.style.color = "#f44336";
+                        }
+                    }
+                } else {
+                    const statusEl = document.getElementById("scanner-status");
+                    if (statusEl) {
+                        statusEl.innerHTML = "❌ Aucune caméra détectée";
+                        statusEl.style.color = "#f44336";
+                    }
+                }
             }
-        });
+        }
+        
+        // Gestionnaire de changement de caméra
+        const cameraSelect = document.getElementById('camera-select');
+        if (cameraSelect) {
+            cameraSelect.addEventListener('change', async (e) => {
+                if (html5QrcodeScanner && isScanning) {
+                    const newCameraId = e.target.value;
+                    if (!newCameraId) return;
+                    
+                    try {
+                        await html5QrcodeScanner.stop();
+                        await startWithCamera(newCameraId);
+                        const statusEl = document.getElementById("scanner-status");
+                        if (statusEl) {
+                            statusEl.textContent = "Caméra changée, prêt à scanner";
+                        }
+                    } catch (err) {
+                        console.error('Erreur changement caméra:', err);
+                        const statusEl = document.getElementById("scanner-status");
+                        if (statusEl) {
+                            statusEl.innerHTML = "❌ Impossible de changer de caméra";
+                            statusEl.style.color = "#f44336";
+                        }
+                    }
+                }
+            });
+        }
     }
     
     function stopScanner() {
@@ -234,8 +366,6 @@ const CameraScanner = (() => {
             if (note) {
                 AppState.files[AppState.currentTab] = note.value;
                 Storage.saveState();
-                // Mettre à jour le point vert
-                if (window.Tabs) window.Tabs.updateTabIndicators();
             }
         }
         
@@ -252,8 +382,8 @@ const CameraScanner = (() => {
                 isScanning = false;
                 
                 setTimeout(() => {
-                    if (typeof Editor !== 'undefined' && Editor.forceCloudSave) {
-                        Editor.forceCloudSave();
+                    if (typeof Editor !== 'undefined' && Editor.autoSave) {
+                        Editor.autoSave();
                     }
                     if (typeof Tabs !== 'undefined' && Tabs.updateTabIndicators) {
                         Tabs.updateTabIndicators();
@@ -272,8 +402,8 @@ const CameraScanner = (() => {
             isScanning = false;
             
             setTimeout(() => {
-                if (typeof Editor !== 'undefined' && Editor.forceCloudSave) {
-                    Editor.forceCloudSave();
+                if (typeof Editor !== 'undefined' && Editor.autoSave) {
+                    Editor.autoSave();
                 }
                 if (typeof Tabs !== 'undefined' && Tabs.updateTabIndicators) {
                     Tabs.updateTabIndicators();
@@ -324,15 +454,7 @@ const CameraScanner = (() => {
         }
         
         AppState.files[AppState.currentTab] = note.value;
-        
-        localStorage.setItem('cdiFiles', JSON.stringify(AppState.files));
-        localStorage.setItem('cdiTabOrder', JSON.stringify(AppState.tabOrder));
-        localStorage.setItem('cdiCurrentTab', AppState.currentTab);
-        
         Storage.saveState();
-        
-        // Mettre à jour le point vert immédiatement
-        if (window.Tabs) window.Tabs.updateTabIndicators();
         
         if (typeof Editor !== 'undefined') {
             Editor.updateLineCount();
@@ -348,8 +470,15 @@ const CameraScanner = (() => {
     function init() {
         const cameraBtn = document.getElementById("cameraScanBtn");
         const cameraBtnMobile = document.getElementById("cameraScanBtnMobile");
-        if (cameraBtn) cameraBtn.addEventListener("click", startScanner);
-        if (cameraBtnMobile) cameraBtnMobile.addEventListener("click", startScanner);
+        
+        if (cameraBtn) {
+            cameraBtn.addEventListener("click", startScanner);
+        }
+        if (cameraBtnMobile) {
+            cameraBtnMobile.addEventListener("click", startScanner);
+        }
+        
+        console.log('📷 Scanner initialisé');
     }
     
     return {
