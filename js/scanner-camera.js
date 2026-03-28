@@ -153,19 +153,35 @@ const CameraScanner = (() => {
     async function startScanner() {
         if (isScanning) return;
         
+        console.log('🔍 Scanner - démarrage');
+        
+        // Vérifier que AppState est prêt
+        if (!AppState || !AppState.currentTab) {
+            console.log('⏳ Scanner - AppState non prêt, attente...');
+            setTimeout(() => startScanner(), 500);
+            return;
+        }
+        
+        // Vérifier le mode
+        const mode = window.Auth ? window.Auth.getCurrentMode() : null;
+        console.log('🔍 Scanner - mode actuel:', mode);
+        
         // Vérifier la disponibilité de la caméra
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("❌ Votre navigateur ne supporte pas l'accès à la caméra.");
+            alert("❌ Votre navigateur ne supporte pas l'accès à la caméra.\n\nUtilisez Chrome, Safari ou Firefox sur mobile.");
             return;
         }
         
         // Tester l'accès caméra
         try {
+            console.log('🔍 Scanner - test accès caméra...');
             const testStream = await navigator.mediaDevices.getUserMedia({ video: true });
             testStream.getTracks().forEach(track => track.stop());
+            console.log('✅ Scanner - accès caméra OK');
         } catch (err) {
+            console.error('❌ Scanner - erreur accès caméra:', err);
             if (err.name === 'NotAllowedError') {
-                alert("❌ Accès à la caméra refusé.\n\nVeuillez autoriser l'accès dans les paramètres.");
+                alert("❌ Accès à la caméra refusé.\n\nVeuillez autoriser l'accès dans les paramètres de votre navigateur.");
             } else if (err.name === 'NotFoundError') {
                 alert("❌ Aucune caméra trouvée sur cet appareil.");
             } else {
@@ -176,12 +192,14 @@ const CameraScanner = (() => {
         
         await createScannerUI();
         
+        // Petit délai pour que le DOM soit prêt
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         const config = {
-            fps: 15,
+            fps: 10,
             qrbox: function(viewfinderWidth, viewfinderHeight) {
-                const height = Math.min(150, viewfinderHeight * 0.6);
-                const width = Math.min(300, height * 2);
-                return { width: Math.round(width), height: Math.round(height) };
+                const size = Math.min(viewfinderWidth, viewfinderHeight) * 0.6;
+                return { width: size, height: size };
             },
             rememberLastUsedCamera: true,
             showTorchButtonIfSupported: false,
@@ -201,14 +219,18 @@ const CameraScanner = (() => {
             if (scanTimeout) return;
             
             let code = decodedText.trim();
+            console.log('📷 Scanner - code détecté:', code);
             const added = addCodeToTextarea(code);
             
             if (added) {
                 updateLastCode(code);
                 playBeep();
                 
-                document.getElementById("scanner-status").innerHTML = "✅ Code ajouté !";
-                document.getElementById("scanner-status").style.color = "#4CAF50";
+                const statusEl = document.getElementById("scanner-status");
+                if (statusEl) {
+                    statusEl.innerHTML = "✅ Code ajouté !";
+                    statusEl.style.color = "#4CAF50";
+                }
                 
                 if (window.navigator && window.navigator.vibrate) {
                     window.navigator.vibrate(100);
@@ -225,51 +247,58 @@ const CameraScanner = (() => {
             }
         };
         
-        const onScanFailure = (errorMessage) => {};
+        const onScanFailure = (errorMessage) => {
+            // Ignorer les erreurs de scan normales
+        };
         
         html5QrcodeScanner = new Html5Qrcode("qr-reader");
         
-        // Essayer avec facingMode: "environment" (caméra arrière)
-        try {
-            await html5QrcodeScanner.start(
-                { facingMode: "environment" },
-                config,
-                onScanSuccess,
-                onScanFailure
-            );
-            isScanning = true;
-            const statusEl = document.getElementById("scanner-status");
-            if (statusEl) {
-                statusEl.textContent = "Scannez un code-barres...";
-            }
-        } catch (err) {
-            console.error('Erreur caméra arrière:', err);
-            
-            // Fallback : caméra avant
+        // Essayer différentes configurations de caméra
+        const cameraConfigs = [
+            { facingMode: { exact: "environment" } },  // caméra arrière exacte
+            { facingMode: "environment" },              // caméra arrière
+            { facingMode: "user" },                    // caméra avant
+            { deviceId: { exact: null } }               // caméra par défaut
+        ];
+        
+        let started = false;
+        
+        for (const cameraConfig of cameraConfigs) {
+            if (started) break;
             try {
+                console.log('🔍 Scanner - essai config:', JSON.stringify(cameraConfig));
                 await html5QrcodeScanner.start(
-                    { facingMode: "user" },
+                    cameraConfig,
                     config,
                     onScanSuccess,
                     onScanFailure
                 );
+                started = true;
                 isScanning = true;
+                console.log('✅ Scanner - démarré avec succès');
                 const statusEl = document.getElementById("scanner-status");
                 if (statusEl) {
-                    statusEl.textContent = "Scannez un code-barres (caméra avant)...";
+                    statusEl.textContent = "Scannez un code-barres...";
+                    statusEl.style.color = "";
                 }
-            } catch (err2) {
-                console.error('Erreur caméra avant:', err2);
-                const statusEl = document.getElementById("scanner-status");
-                if (statusEl) {
-                    statusEl.innerHTML = "❌ Impossible d'accéder à la caméra<br><small>Vérifiez les permissions</small>";
-                    statusEl.style.color = "#f44336";
-                }
+            } catch (err) {
+                console.log('⚠️ Scanner - échec config:', err.message);
+            }
+        }
+        
+        if (!started) {
+            console.error('❌ Scanner - impossible de démarrer');
+            const statusEl = document.getElementById("scanner-status");
+            if (statusEl) {
+                statusEl.innerHTML = "❌ Impossible d'accéder à la caméra<br><small>Vérifiez les permissions</small>";
+                statusEl.style.color = "#f44336";
             }
         }
     }
     
     function stopScanner() {
+        console.log('🔍 Scanner - arrêt');
+        
         if (AppState.currentTab) {
             const note = document.getElementById("note");
             if (note) {
@@ -386,6 +415,11 @@ const CameraScanner = (() => {
     function init() {
         const cameraBtn = document.getElementById("cameraScanBtn");
         const cameraBtnMobile = document.getElementById("cameraScanBtnMobile");
+        
+        console.log('🔍 Scanner init - boutons trouvés:', {
+            desktop: !!cameraBtn,
+            mobile: !!cameraBtnMobile
+        });
         
         if (cameraBtn) {
             cameraBtn.addEventListener("click", startScanner);
